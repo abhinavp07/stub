@@ -1,0 +1,116 @@
+{
+  "DocumentMetadata": {
+    "Pages": 1
+  },
+  "ExpenseDocuments": [
+    {
+      "ExpenseIndex": 1,
+      "SummaryFields": [
+        {
+          "Type": {
+            "Text": "VENDOR_NAME",
+            "Confidence": 98.5
+          },
+          "ValueDetection": {
+            "Text": "BEST BUY",
+            "Confidence": 98.0
+          },
+          "PageNumber": 1
+        },
+        {
+          "Type": {
+            "Text": "INVOICE_RECEIPT_DATE",
+            "Confidence": 96.5
+          },
+          "LabelDetection": {
+            "Text": "Date",
+            "Confidence": 96.0
+          },
+          "ValueDetection": {
+            "Text": "2024/01/07",
+            "Confidence": 96.0
+          },
+          "PageNumber": 1
+        },
+        {
+          "Type": {
+            "Text": "TAX",
+            "Confidence": 88.5
+          },
+          "LabelDetection": {
+            "Text": "Tax",
+            "Confidence": 88.0
+          },
+          "ValueDetection": {
+            "Text": "3.33-",
+            "Confidence": 88.0
+          },
+          "PageNumber": 1
+        },
+        {
+          "Type": {
+            "Text": "TOTAL",
+            "Confidence": 61.7
+          },
+          "LabelDetection": {
+            "Text": "Refund Total",
+            "Confidence": 61.2
+          },
+          "ValueDetection": {
+            "Text": "45.00-",
+            "Confidence": 61.2
+          },
+          "PageNumber": 1
+        }
+      ],
+      "LineItemGroups": [
+        {
+          "LineItemGroupIndex": 1,
+          "LineItems": [
+            {
+              "LineItemExpenseFields": [
+                {
+                  "Type": {
+                    "Text": "ITEM",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "USB-C CABLE RETURN",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "PRICE",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "(41.67)",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "EXPENSE_ROW",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "USB-C CABLE RETURN (41.67)",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "Blocks": []
+    }
+  ],
+  "ResponseMetadata": {
+    "HTTPStatusCode": 200
+  }
+}

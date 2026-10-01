@@ -1,0 +1,131 @@
+{
+  "DocumentMetadata": {
+    "Pages": 1
+  },
+  "ExpenseDocuments": [
+    {
+      "ExpenseIndex": 1,
+      "SummaryFields": [
+        {
+          "Type": {
+            "Text": "VENDOR_NAME",
+            "Confidence": 98.7
+          },
+          "ValueDetection": {
+            "Text": "Café Müller GmbH",
+            "Confidence": 98.2
+          },
+          "PageNumber": 1
+        },
+        {
+          "Type": {
+            "Text": "INVOICE_RECEIPT_DATE",
+            "Confidence": 97.5
+          },
+          "LabelDetection": {
+            "Text": "Datum",
+            "Confidence": 97.0
+          },
+          "ValueDetection": {
+            "Text": "15.03.2024",
+            "Confidence": 97.0
+          },
+          "PageNumber": 1
+        },
+        {
+          "Type": {
+            "Text": "SUBTOTAL",
+            "Confidence": 96.9
+          },
+          "LabelDetection": {
+            "Text": "Netto",
+            "Confidence": 96.4
+          },
+          "ValueDetection": {
+            "Text": "1.234,50",
+            "Confidence": 96.4
+          },
+          "PageNumber": 1
+        },
+        {
+          "Type": {
+            "Text": "TAX",
+            "Confidence": 96.3
+          },
+          "LabelDetection": {
+            "Text": "MwSt 19%",
+            "Confidence": 95.8
+          },
+          "ValueDetection": {
+            "Text": "234,56",
+            "Confidence": 95.8
+          },
+          "PageNumber": 1
+        },
+        {
+          "Type": {
+            "Text": "TOTAL",
+            "Confidence": 99.3
+          },
+          "LabelDetection": {
+            "Text": "Summe",
+            "Confidence": 98.8
+          },
+          "ValueDetection": {
+            "Text": "1.469,06 €",
+            "Confidence": 98.8
+          },
+          "PageNumber": 1
+        }
+      ],
+      "LineItemGroups": [
+        {
+          "LineItemGroupIndex": 1,
+          "LineItems": [
+            {
+              "LineItemExpenseFields": [
+                {
+                  "Type": {
+                    "Text": "ITEM",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "Catering Paket",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "PRICE",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "1.234,50",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "EXPENSE_ROW",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "Catering Paket 1.234,50",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "Blocks": []
+    }
+  ],
+  "ResponseMetadata": {
+    "HTTPStatusCode": 200
+  }
+}

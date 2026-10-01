@@ -1,0 +1,39 @@
+{
+  "DocumentMetadata": {
+    "Pages": 1
+  },
+  "ExpenseDocuments": [
+    {
+      "ExpenseIndex": 1,
+      "SummaryFields": [
+        {
+          "Type": {
+            "Text": "VENDOR_NAME",
+            "Confidence": 94.5
+          },
+          "ValueDetection": {
+            "Text": "CORNER STORE",
+            "Confidence": 94.0
+          },
+          "PageNumber": 1
+        },
+        {
+          "Type": {
+            "Text": "ADDRESS",
+            "Confidence": 90.5
+          },
+          "ValueDetection": {
+            "Text": "12 Main St",
+            "Confidence": 90.0
+          },
+          "PageNumber": 1
+        }
+      ],
+      "LineItemGroups": [],
+      "Blocks": []
+    }
+  ],
+  "ResponseMetadata": {
+    "HTTPStatusCode": 200
+  }
+}

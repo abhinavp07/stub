@@ -1,0 +1,171 @@
+{
+  "DocumentMetadata": {
+    "Pages": 1
+  },
+  "ExpenseDocuments": [
+    {
+      "ExpenseIndex": 1,
+      "SummaryFields": [
+        {
+          "Type": {
+            "Text": "VENDOR_NAME",
+            "Confidence": 99.1
+          },
+          "ValueDetection": {
+            "Text": "SHELL OIL 57442",
+            "Confidence": 98.6
+          },
+          "PageNumber": 1
+        },
+        {
+          "Type": {
+            "Text": "INVOICE_RECEIPT_DATE",
+            "Confidence": 97.9
+          },
+          "ValueDetection": {
+            "Text": "09/12/2024 08:05",
+            "Confidence": 97.4,
+            "NormalizedValue": {
+              "Value": "2024-09-12T00:00:00",
+              "ValueType": "DATE"
+            }
+          },
+          "PageNumber": 1
+        },
+        {
+          "Type": {
+            "Text": "TAX",
+            "Confidence": 90.5
+          },
+          "ValueDetection": {
+            "Text": "0.00",
+            "Confidence": 90.0
+          },
+          "PageNumber": 1
+        },
+        {
+          "Type": {
+            "Text": "TOTAL",
+            "Confidence": 99.7
+          },
+          "LabelDetection": {
+            "Text": "TOTAL",
+            "Confidence": 99.2
+          },
+          "ValueDetection": {
+            "Text": "$48.27",
+            "Confidence": 99.2
+          },
+          "PageNumber": 1
+        }
+      ],
+      "LineItemGroups": [
+        {
+          "LineItemGroupIndex": 1,
+          "LineItems": [
+            {
+              "LineItemExpenseFields": [
+                {
+                  "Type": {
+                    "Text": "ITEM",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "UNLEADED REG",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "QUANTITY",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "12.137",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "UNIT_PRICE",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "3.73",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "PRICE",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "45.27",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "EXPENSE_ROW",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "12.137 UNLEADED REG 3.73 45.27",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                }
+              ]
+            },
+            {
+              "LineItemExpenseFields": [
+                {
+                  "Type": {
+                    "Text": "ITEM",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "COFFEE 16OZ",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "PRICE",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "3.00",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "EXPENSE_ROW",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "COFFEE 16OZ 3.00",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "Blocks": []
+    }
+  ],
+  "ResponseMetadata": {
+    "HTTPStatusCode": 200
+  }
+}

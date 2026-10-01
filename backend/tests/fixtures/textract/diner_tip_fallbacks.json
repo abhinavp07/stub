@@ -1,0 +1,268 @@
+{
+  "DocumentMetadata": {
+    "Pages": 1
+  },
+  "ExpenseDocuments": [
+    {
+      "ExpenseIndex": 1,
+      "SummaryFields": [
+        {
+          "Type": {
+            "Text": "NAME",
+            "Confidence": 97.7
+          },
+          "ValueDetection": {
+            "Text": "Joe's Diner",
+            "Confidence": 97.2
+          },
+          "PageNumber": 1
+        },
+        {
+          "Type": {
+            "Text": "INVOICE_RECEIPT_DATE",
+            "Confidence": 95.5
+          },
+          "LabelDetection": {
+            "Text": "Date",
+            "Confidence": 95.0
+          },
+          "ValueDetection": {
+            "Text": "Mar 2, 2024 7:41 PM",
+            "Confidence": 95.0
+          },
+          "PageNumber": 1
+        },
+        {
+          "Type": {
+            "Text": "SUBTOTAL",
+            "Confidence": 98.5
+          },
+          "LabelDetection": {
+            "Text": "Subtotal",
+            "Confidence": 98.0
+          },
+          "ValueDetection": {
+            "Text": "42.00",
+            "Confidence": 98.0
+          },
+          "PageNumber": 1
+        },
+        {
+          "Type": {
+            "Text": "TAX",
+            "Confidence": 98.0
+          },
+          "LabelDetection": {
+            "Text": "Tax",
+            "Confidence": 97.5
+          },
+          "ValueDetection": {
+            "Text": "3.68",
+            "Confidence": 97.5
+          },
+          "PageNumber": 1
+        },
+        {
+          "Type": {
+            "Text": "GRATUITY",
+            "Confidence": 93.8
+          },
+          "LabelDetection": {
+            "Text": "Tip",
+            "Confidence": 93.3
+          },
+          "ValueDetection": {
+            "Text": "8.40",
+            "Confidence": 93.3
+          },
+          "PageNumber": 1
+        },
+        {
+          "Type": {
+            "Text": "AMOUNT_PAID",
+            "Confidence": 96.6
+          },
+          "LabelDetection": {
+            "Text": "Amount Paid",
+            "Confidence": 96.1
+          },
+          "ValueDetection": {
+            "Text": "$54.08",
+            "Confidence": 96.1
+          },
+          "PageNumber": 1
+        }
+      ],
+      "LineItemGroups": [
+        {
+          "LineItemGroupIndex": 1,
+          "LineItems": [
+            {
+              "LineItemExpenseFields": [
+                {
+                  "Type": {
+                    "Text": "ITEM",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "Cheeseburger",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "PRICE",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "15.00",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "EXPENSE_ROW",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "Cheeseburger 15.00",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                }
+              ]
+            },
+            {
+              "LineItemExpenseFields": [
+                {
+                  "Type": {
+                    "Text": "ITEM",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "Cobb Salad",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "PRICE",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "12.00",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "EXPENSE_ROW",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "Cobb Salad 12.00",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                }
+              ]
+            },
+            {
+              "LineItemExpenseFields": [
+                {
+                  "Type": {
+                    "Text": "ITEM",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "Iced Tea",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "QUANTITY",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "2",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "UNIT_PRICE",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "3.00",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "EXPENSE_ROW",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "2 Iced Tea 3.00",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                }
+              ]
+            },
+            {
+              "LineItemExpenseFields": [
+                {
+                  "Type": {
+                    "Text": "ITEM",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "Pie a la mode",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "PRICE",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "9.00",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "EXPENSE_ROW",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "Pie a la mode 9.00",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "Blocks": []
+    }
+  ],
+  "ResponseMetadata": {
+    "HTTPStatusCode": 200
+  }
+}

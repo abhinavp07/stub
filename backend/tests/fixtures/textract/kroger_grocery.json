@@ -1,0 +1,396 @@
+{
+  "DocumentMetadata": {
+    "Pages": 1
+  },
+  "ExpenseDocuments": [
+    {
+      "ExpenseIndex": 1,
+      "SummaryFields": [
+        {
+          "Type": {
+            "Text": "VENDOR_NAME",
+            "Confidence": 99.9
+          },
+          "ValueDetection": {
+            "Text": "KROGER",
+            "Confidence": 99.4
+          },
+          "PageNumber": 1,
+          "GroupProperties": [
+            {
+              "Types": [
+                "VENDOR"
+              ],
+              "Id": "group-1"
+            }
+          ]
+        },
+        {
+          "Type": {
+            "Text": "ADDRESS",
+            "Confidence": 97.6
+          },
+          "ValueDetection": {
+            "Text": "1014 Vine St\nCincinnati, OH 45202",
+            "Confidence": 97.1
+          },
+          "PageNumber": 1,
+          "GroupProperties": [
+            {
+              "Types": [
+                "VENDOR"
+              ],
+              "Id": "group-1"
+            }
+          ]
+        },
+        {
+          "Type": {
+            "Text": "VENDOR_PHONE",
+            "Confidence": 97.3
+          },
+          "ValueDetection": {
+            "Text": "(513) 762-4000",
+            "Confidence": 96.8
+          },
+          "PageNumber": 1
+        },
+        {
+          "Type": {
+            "Text": "INVOICE_RECEIPT_DATE",
+            "Confidence": 99.2
+          },
+          "LabelDetection": {
+            "Text": "Date",
+            "Confidence": 98.7
+          },
+          "ValueDetection": {
+            "Text": "03/15/2024 14:32",
+            "Confidence": 98.7,
+            "NormalizedValue": {
+              "Value": "2024-03-15T00:00:00",
+              "ValueType": "DATE"
+            }
+          },
+          "PageNumber": 1
+        },
+        {
+          "Type": {
+            "Text": "SUBTOTAL",
+            "Confidence": 99.6
+          },
+          "LabelDetection": {
+            "Text": "SUBTOTAL",
+            "Confidence": 99.1
+          },
+          "ValueDetection": {
+            "Text": "$23.47",
+            "Confidence": 99.1
+          },
+          "PageNumber": 1,
+          "Currency": {
+            "Code": "USD",
+            "Confidence": 90.0
+          }
+        },
+        {
+          "Type": {
+            "Text": "TAX",
+            "Confidence": 99.4
+          },
+          "LabelDetection": {
+            "Text": "TAX",
+            "Confidence": 98.9
+          },
+          "ValueDetection": {
+            "Text": "$1.64",
+            "Confidence": 98.9
+          },
+          "PageNumber": 1,
+          "Currency": {
+            "Code": "USD",
+            "Confidence": 90.0
+          }
+        },
+        {
+          "Type": {
+            "Text": "TOTAL",
+            "Confidence": 99.9
+          },
+          "LabelDetection": {
+            "Text": "TOTAL",
+            "Confidence": 99.5
+          },
+          "ValueDetection": {
+            "Text": "$25.11",
+            "Confidence": 99.5
+          },
+          "PageNumber": 1,
+          "Currency": {
+            "Code": "USD",
+            "Confidence": 90.0
+          }
+        },
+        {
+          "Type": {
+            "Text": "AMOUNT_PAID",
+            "Confidence": 92.5
+          },
+          "LabelDetection": {
+            "Text": "VISA",
+            "Confidence": 92.0
+          },
+          "ValueDetection": {
+            "Text": "$25.11",
+            "Confidence": 92.0
+          },
+          "PageNumber": 1
+        },
+        {
+          "Type": {
+            "Text": "TOTAL",
+            "Confidence": 81.5
+          },
+          "LabelDetection": {
+            "Text": "BALANCE DUE",
+            "Confidence": 81.0
+          },
+          "ValueDetection": {
+            "Text": "25.11",
+            "Confidence": 81.0
+          },
+          "PageNumber": 1
+        }
+      ],
+      "LineItemGroups": [
+        {
+          "LineItemGroupIndex": 1,
+          "LineItems": [
+            {
+              "LineItemExpenseFields": [
+                {
+                  "Type": {
+                    "Text": "ITEM",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "BANANAS",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "PRICE",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "1.29",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "EXPENSE_ROW",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "BANANAS 1.29",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                }
+              ]
+            },
+            {
+              "LineItemExpenseFields": [
+                {
+                  "Type": {
+                    "Text": "ITEM",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "KROGER 2% MILK GAL",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "QUANTITY",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "1",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "PRICE",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "3.49",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "EXPENSE_ROW",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "1 KROGER 2% MILK GAL 3.49",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                }
+              ]
+            },
+            {
+              "LineItemExpenseFields": [
+                {
+                  "Type": {
+                    "Text": "ITEM",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "WHEAT BREAD",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "PRICE",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "2.99",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "EXPENSE_ROW",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "WHEAT BREAD 2.99",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                }
+              ]
+            },
+            {
+              "LineItemExpenseFields": [
+                {
+                  "Type": {
+                    "Text": "ITEM",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "CHICKEN BREAST",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "QUANTITY",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "2",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "UNIT_PRICE",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "6.00",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "PRICE",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "12.00",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "EXPENSE_ROW",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "2 CHICKEN BREAST 6.00 12.00",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                }
+              ]
+            },
+            {
+              "LineItemExpenseFields": [
+                {
+                  "Type": {
+                    "Text": "ITEM",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "LARGE EGGS 12CT",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "PRICE",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "3.70",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "EXPENSE_ROW",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "LARGE EGGS 12CT 3.70",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "Blocks": []
+    }
+  ],
+  "ResponseMetadata": {
+    "HTTPStatusCode": 200
+  }
+}
