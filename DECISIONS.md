@@ -99,3 +99,56 @@ Choices made where the spec was ambiguous or silent. Newest at the bottom of eac
   adding UI libraries.
 - **Multi-file upload** came for free with the upload page, so Phase 1 already uploads up to 3
   files concurrently, each with its own progress bar and error.
+
+## Phase 2 — Organizing
+
+- **Global rules name a category instead of pointing at one.** §5 gives
+  `merchant_category_rules` a `category_id` with `user_id NULL` meaning global, but categories are
+  per-user, so a global rule can't reference one. Global rules store `category_name` (e.g.
+  "Groceries") and resolve to the user's category with that name, case-insensitively. A check
+  constraint enforces it: user rules have `category_id` and global rules have `category_name`.
+  If the user renames or deletes that default category, the global rule simply stops matching for
+  them.
+- **75 global rules** are seeded by the migration `db6313b997ee`. The patterns are frozen inside
+  the migration rather than imported from app code, so the migration never changes after it ships.
+  A test checks that each pattern is already normalized and names a default category.
+- **Normalization** (`normalize_merchant`): lowercase; apostrophes and `&` are dropped without a
+  space (`Joe's` → `joes`, `AT&T` → `att`); other punctuation becomes a space; `#123` and
+  standalone numbers are removed; filler words (`inc`, `llc`, `ltd`, `co`, `corp`, `store`,
+  `the`, `com`, …) are dropped.
+- **Matching** is whole-word containment, and the longest pattern wins: `uber eats` (Dining) beats
+  `uber` (Transport), and `shell` doesn't match "Shellfish Shack". The user's own rules are checked
+  before global ones.
+- **Learning.** When a PATCH changes a receipt's category to a non-null value, the user rule
+  `normalized merchant → category` is upserted. Clearing a category teaches nothing.
+- **Category counts as a user edit.** Changing it adds `category_id` to `user_edited_fields`, so
+  reprocessing won't re-categorize. If the user corrects the merchant but never picked a category,
+  the rules re-run for the corrected name.
+- **Existing receipts aren't re-filed** when a rule is learned; rules apply to new receipts and
+  reprocessing. Bulk re-filing could surprise people and the spec doesn't ask for it.
+- **Categories list returns a plain array**, not `{items, next_cursor}`. A user has a handful of
+  categories, so pagination would only add friction. Each item includes `receipt_count` for the
+  delete confirmation.
+- **Category names are unique case-insensitively** (409 on a clash), checked in the app; the DB
+  constraint is case-sensitive.
+- **Deleting a category** relies on the existing FKs: receipts become uncategorized
+  (`SET NULL`); that category's budget and the user's rules pointing at it are removed
+  (`CASCADE`).
+- **Filters.**
+  - `q` is a case-insensitive `ILIKE '%…%'` on merchant, with LIKE wildcards escaped; the pg_trgm
+    index serves it.
+  - `category_id=none` means uncategorized.
+  - `tag` is an exact match on one tag.
+  - Date and amount bounds are inclusive.
+  - Every filter combines with AND and works with both sort orders and cursor pagination.
+- **Thumbnails** use the same URL as the full image (no resizing pipeline). PDFs get a "PDF"
+  placeholder. A resized thumbnail is a possible later improvement if lists get heavy.
+- **Tags:** at most 50 per receipt and 40 characters each, trimmed and de-duplicated in order.
+- **Filters live in the URL** (`/receipts?needs_review=true&q=kro`), so they survive a refresh
+  and the Phase 3 dashboard can link to a filtered list. Malformed parameters are ignored, not
+  surfaced as errors.
+- **Tests build the schema with the real Alembic migrations** instead of `create_all`, so every
+  test run also checks the migrations and gets the seeded global rules. Between tests, cleanup is
+  `DELETE FROM users`, which cascades to user data and leaves global rules alone.
+- **Alembic logging.** `env.py` now passes `disable_existing_loggers=False`; previously,
+  running migrations in-process silenced the app's loggers.

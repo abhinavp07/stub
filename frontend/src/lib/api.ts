@@ -1,8 +1,12 @@
+import { filtersToParams } from "./filters";
 import type {
+  Category,
+  CategoryInput,
   LineItemInput,
   LoginRequest,
   Page,
   ReceiptDetail,
+  ReceiptFilters,
   ReceiptSummary,
   ReceiptUpdate,
   SignupRequest,
@@ -69,12 +73,11 @@ export const authApi = {
 };
 
 export const receiptsApi = {
-  list: (params: { cursor?: string | null; limit?: number } = {}) => {
-    const qs = new URLSearchParams();
-    if (params.cursor) qs.set("cursor", params.cursor);
-    if (params.limit) qs.set("limit", String(params.limit));
-    const query = qs.toString();
-    return request<Page<ReceiptSummary>>(`/receipts${query ? `?${query}` : ""}`);
+  list: (filters: ReceiptFilters = {}, cursor?: string | null, limit = 25) => {
+    const qs = filtersToParams(filters);
+    if (cursor) qs.set("cursor", cursor);
+    qs.set("limit", String(limit));
+    return request<Page<ReceiptSummary>>(`/receipts?${qs.toString()}`);
   },
   get: (id: string) => request<ReceiptDetail>(`/receipts/${id}`),
   uploadUrl: (body: UploadUrlRequest) =>
@@ -87,4 +90,13 @@ export const receiptsApi = {
   reprocess: (id: string) =>
     request<ReceiptDetail>(`/receipts/${id}/reprocess`, { method: "POST" }),
   remove: (id: string) => request<void>(`/receipts/${id}`, { method: "DELETE" }),
+};
+
+export const categoriesApi = {
+  list: () => request<Category[]>("/categories"),
+  create: (body: CategoryInput) =>
+    request<Category>("/categories", { method: "POST", json: { ...body } }),
+  update: (id: string, body: CategoryInput) =>
+    request<Category>(`/categories/${id}`, { method: "PATCH", json: { ...body } }),
+  remove: (id: string) => request<void>(`/categories/${id}`, { method: "DELETE" }),
 };

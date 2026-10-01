@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config import get_settings
-from app.routers import auth, health, local_storage, receipts
+from app.routers import auth, categories, health, local_storage, receipts
 
 
 def _validation_message(exc: RequestValidationError) -> str:
@@ -38,7 +38,7 @@ def create_app() -> FastAPI:
             content={"detail": _validation_message(exc)},
         )
 
-    for module in (health, auth, receipts, local_storage):
+    for module in (health, auth, receipts, categories, local_storage):
         app.include_router(module.router, prefix="/api")
     return app
 

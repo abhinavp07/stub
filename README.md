@@ -20,7 +20,8 @@ make dev     # API on http://localhost:8000, web on http://localhost:3000
 
 Open http://localhost:3000, sign up, and upload any JPG, PNG or PDF. In mock mode the "extraction"
 returns one of three realistic sample receipts (grocery, restaurant, gas station) after a short
-delay, so you can try the whole flow offline.
+delay, so you can try the whole flow offline. Kroger and Shell receipts are filed automatically
+(Groceries, Gas); move a Joe's Diner receipt into a category and the next one follows.
 
 <details>
 <summary>Without make</summary>

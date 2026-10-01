@@ -71,6 +71,7 @@ export interface ReceiptSummary {
   tags: string[];
   needs_review: boolean;
   created_at: ISODateTime;
+  thumbnail_url: string | null;
 }
 
 export type ExtractedField = "merchant" | "purchase_date" | "subtotal" | "tax" | "tip" | "total";
@@ -104,4 +105,33 @@ export interface ReceiptUpdate {
 export interface Page<T> {
   items: T[];
   next_cursor: string | null;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  color: string; // #rrggbb
+  is_default: boolean;
+  receipt_count: number;
+}
+
+export interface CategoryInput {
+  name?: string;
+  color?: string;
+}
+
+export type ReceiptSort = "purchase_date" | "total";
+
+/** Query filters for GET /receipts. category_id "none" means uncategorized. */
+export interface ReceiptFilters {
+  q?: string;
+  category_id?: string;
+  date_from?: ISODate;
+  date_to?: ISODate;
+  min_total?: string;
+  max_total?: string;
+  status?: Exclude<ReceiptStatus, "pending_upload">;
+  needs_review?: boolean;
+  tag?: string;
+  sort?: ReceiptSort;
 }

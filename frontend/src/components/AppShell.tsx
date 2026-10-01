@@ -9,6 +9,7 @@ import { authApi } from "@/lib/api";
 const NAV = [
   { href: "/receipts", label: "Receipts" },
   { href: "/upload", label: "Upload" },
+  { href: "/categories", label: "Categories" },
 ];
 
 export function useMe() {

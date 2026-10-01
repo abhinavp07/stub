@@ -1,6 +1,7 @@
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -54,6 +55,7 @@ class ReceiptSummary(BaseModel):
     tags: list[str]
     needs_review: bool
     created_at: datetime
+    thumbnail_url: str | None = None
 
 
 class ReceiptDetail(ReceiptSummary):
@@ -83,6 +85,6 @@ class ReceiptUpdate(BaseModel):
     total: MoneyIn | None = None
     category_id: uuid.UUID | None = None
     notes: str | None = Field(default=None, max_length=5000)
-    tags: list[str] | None = Field(default=None, max_length=50)
+    tags: list[Annotated[str, Field(max_length=40)]] | None = Field(default=None, max_length=50)
     # Send false to confirm the receipt has been reviewed.
     needs_review: bool | None = None

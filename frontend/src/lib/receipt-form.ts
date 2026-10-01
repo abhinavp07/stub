@@ -34,6 +34,9 @@ export const receiptFormSchema = z.object({
   tax: money,
   tip: money,
   total: money,
+  category_id: z.string(),
+  notes: z.string().max(5000, "Notes are too long"),
+  tags: z.array(z.string().max(40)).max(50),
   line_items: z.array(lineItemSchema),
 });
 
@@ -56,6 +59,9 @@ export function toFormValues(r: ReceiptDetail): ReceiptFormValues {
     tax: r.tax ?? "",
     tip: r.tip ?? "",
     total: r.total ?? "",
+    category_id: r.category_id ?? "",
+    notes: r.notes ?? "",
+    tags: r.tags,
     line_items: r.line_items.map((li) => ({
       description: li.description,
       quantity: li.quantity === null ? "" : String(Number(li.quantity)),
@@ -79,6 +85,9 @@ export function buildChanges(
     else if (name === "purchase_date") patch.purchase_date = raw || null;
     else patch[name] = normalizeMoney(raw);
   }
+  if (values.category_id !== initial.category_id) patch.category_id = values.category_id || null;
+  if (values.notes.trim() !== initial.notes.trim()) patch.notes = values.notes.trim() || null;
+  if (JSON.stringify(values.tags) !== JSON.stringify(initial.tags)) patch.tags = values.tags;
   const items = values.line_items.map((li) => ({
     description: li.description.trim(),
     quantity: li.quantity.trim() || null,

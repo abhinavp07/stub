@@ -5,14 +5,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useFieldArray, useForm, type UseFormRegister } from "react-hook-form";
+import { Controller, useFieldArray, useForm, type UseFormRegister } from "react-hook-form";
 
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ReceiptImage } from "@/components/ReceiptImage";
+import { TagInput } from "@/components/TagInput";
 import { NeedsReviewFlag, StatusBadge } from "@/components/StatusBadge";
 import { useToast } from "@/components/Toast";
 import { Button, Field, Input, Skeleton, Spinner, inputClass } from "@/components/ui";
 import { ApiError, receiptsApi } from "@/lib/api";
+import { useCategories } from "@/lib/hooks";
 import {
   buildChanges,
   receiptFormSchema,
@@ -65,6 +67,7 @@ function ReceiptView({ receipt }: { receipt: ReceiptDetail }) {
   const queryClient = useQueryClient();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const processing = receipt.status === "processing";
+  const { data: categories } = useCategories();
 
   const form = useForm<ReceiptFormValues>({
     resolver: zodResolver(receiptFormSchema),
@@ -88,6 +91,7 @@ function ReceiptView({ receipt }: { receipt: ReceiptDetail }) {
   function onSaved(updated: ReceiptDetail) {
     queryClient.setQueryData(["receipts", "detail", updated.id], updated);
     void queryClient.invalidateQueries({ queryKey: ["receipts", "list"] });
+    void queryClient.invalidateQueries({ queryKey: ["categories"] });
     reset(toFormValues(updated));
   }
 
@@ -218,6 +222,43 @@ function ReceiptView({ receipt }: { receipt: ReceiptDetail }) {
                 />
               ))}
             </div>
+          </fieldset>
+
+          <fieldset disabled={processing || busy} className="space-y-4">
+            <legend className="sr-only">Organize</legend>
+            <Field label="Category" htmlFor="field-category">
+              <select id="field-category" className={inputClass} {...register("category_id")}>
+                <option value="">Uncategorized</option>
+                {categories?.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Tags" htmlFor="field-tags">
+              <Controller
+                control={control}
+                name="tags"
+                render={({ field }) => (
+                  <TagInput
+                    id="field-tags"
+                    value={field.value}
+                    onChange={field.onChange}
+                    disabled={processing || busy}
+                  />
+                )}
+              />
+            </Field>
+            <Field label="Notes" htmlFor="field-notes" error={errors.notes?.message}>
+              <textarea
+                id="field-notes"
+                rows={3}
+                className={inputClass}
+                placeholder="e.g. Client lunch with Acme"
+                {...register("notes")}
+              />
+            </Field>
           </fieldset>
 
           <fieldset disabled={processing || busy} className="space-y-3">

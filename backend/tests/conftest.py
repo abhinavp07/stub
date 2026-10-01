@@ -1,7 +1,9 @@
+import asyncio
+import json
 import os
 import shutil
 import tempfile
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from pathlib import Path
 
 import pytest
@@ -20,13 +22,16 @@ os.environ.update(
     JWT_SECRET="test-secret-that-is-long-enough-for-hs256",
 )
 
+from alembic import command  # noqa: E402
+from alembic.config import Config  # noqa: E402
 from httpx import ASGITransport, AsyncClient  # noqa: E402
 from sqlalchemy import text  # noqa: E402
+from sqlalchemy.ext.asyncio import create_async_engine  # noqa: E402
 
 from app.db import engine  # noqa: E402
 from app.main import app  # noqa: E402
-from app.models import Base  # noqa: E402
 
+BACKEND_DIR = Path(__file__).parents[1]
 FIXTURES = Path(__file__).parent / "fixtures"
 
 # Smallest valid-looking payloads; the mock extractor never reads the bytes.
@@ -35,24 +40,34 @@ PNG_BYTES = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64
 PDF_BYTES = b"%PDF-1.4\n" + b"\x00" * 64
 
 
+def _reset_and_migrate() -> None:
+    """Build the test schema with the real migrations (which also seed global merchant rules)."""
+
+    async def reset() -> None:
+        eng = create_async_engine(os.environ["DATABASE_URL"])
+        async with eng.begin() as conn:
+            await conn.execute(text("DROP SCHEMA public CASCADE"))
+            await conn.execute(text("CREATE SCHEMA public"))
+        await eng.dispose()
+
+    asyncio.run(reset())
+    command.upgrade(Config(str(BACKEND_DIR / "alembic.ini")), "head")
+
+
 @pytest.fixture(scope="session", autouse=True)
-async def _schema() -> AsyncIterator[None]:
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.execute(text("DROP TYPE IF EXISTS receipt_status"))
-        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
-        await conn.run_sync(Base.metadata.create_all)
+def _schema() -> Iterator[None]:
+    # Sync on purpose: alembic's env.py runs its own event loop.
+    _reset_and_migrate()
     yield
-    await engine.dispose()
     shutil.rmtree(_UPLOAD_DIR, ignore_errors=True)
 
 
 @pytest.fixture(autouse=True)
 async def _clean_tables() -> AsyncIterator[None]:
     yield
-    tables = ", ".join(t.name for t in Base.metadata.sorted_tables)
+    # Deleting users cascades to all user data and leaves the seeded global rules in place.
     async with engine.begin() as conn:
-        await conn.execute(text(f"TRUNCATE {tables} CASCADE"))
+        await conn.execute(text("DELETE FROM users"))
     app.dependency_overrides.clear()
 
 
@@ -109,3 +124,23 @@ async def upload_receipt(
     detail = await client.get(f"/api/receipts/{body['receipt_id']}")
     assert detail.status_code == 200
     return detail.json()
+
+
+class SampleExtractor:
+    """Always returns one named mock response, so tests can choose the merchant."""
+
+    def __init__(self, sample: str) -> None:
+        self.sample = sample
+
+    async def analyze(self, doc: object, key: str) -> dict:
+        from app.services.textract import MOCK_RESPONSES_DIR
+
+        return json.loads((MOCK_RESPONSES_DIR / f"{self.sample}.json").read_text())
+
+
+def use_sample(sample: str) -> None:
+    """Make every upload extract as the given mock response: grocery (Kroger), restaurant
+    (Joe's Diner) or gas_station (Shell)."""
+    from app.services.textract import get_extractor
+
+    app.dependency_overrides[get_extractor] = lambda: SampleExtractor(sample)

@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models import LineItem, Receipt, ReceiptStatus
+from app.services.categorize import categorize
 from app.services.parsing import ParsedReceipt, needs_review, parse_expense
 from app.services.storage import Storage
 from app.services.textract import ExtractionError, Extractor
@@ -19,6 +20,7 @@ logger = logging.getLogger(__name__)
 GENERIC_FAILURE = "Something went wrong while reading this receipt. Try reprocessing it."
 SCALAR_FIELDS = ("merchant", "purchase_date", "subtotal", "tax", "tip", "total")
 LINE_ITEMS_FIELD = "line_items"
+CATEGORY_FIELD = "category_id"
 
 
 def apply_extraction(
@@ -81,6 +83,8 @@ async def process_receipt(
             raw = await extractor.analyze(doc, receipt.s3_key)
             parsed = parse_expense(raw)
             apply_extraction(receipt, parsed, raw, threshold)
+            if CATEGORY_FIELD not in receipt.user_edited_fields:
+                receipt.category_id = await categorize(session, receipt.user_id, receipt.merchant)
             receipt.status = ReceiptStatus.ready
             receipt.error_message = None
             await session.commit()

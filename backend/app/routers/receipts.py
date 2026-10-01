@@ -21,8 +21,15 @@ from app.schemas.receipts import (
     UploadUrlRequest,
     UploadUrlResponse,
 )
+from app.services.categorize import categorize, learn_rule
 from app.services.pagination import InvalidCursor, SortKey, apply_page, encode_cursor
-from app.services.processing import LINE_ITEMS_FIELD, SCALAR_FIELDS, process_receipt
+from app.services.processing import (
+    CATEGORY_FIELD,
+    LINE_ITEMS_FIELD,
+    SCALAR_FIELDS,
+    process_receipt,
+)
+from app.services.receipt_filters import ReceiptFilters, receipt_filters
 from app.services.storage import (
     ALLOWED_CONTENT_TYPES,
     LocalStorage,
@@ -55,12 +62,23 @@ async def _get_owned(
     return receipt
 
 
+async def _file_url(receipt: Receipt, storage: Storage) -> str | None:
+    """Presigned URL in S3 mode; the ownership-checked file endpoint in local mode."""
+    if receipt.status == ReceiptStatus.pending_upload:
+        return None
+    url = await storage.presign_download(receipt.s3_key)
+    return url or f"/api/receipts/{receipt.id}/file"
+
+
+async def _thumbnail_url(receipt: Receipt, storage: Storage) -> str | None:
+    """Images only; the list shows an icon for PDFs."""
+    if not receipt.content_type.startswith("image/"):
+        return None
+    return await _file_url(receipt, storage)
+
+
 async def _detail(receipt: Receipt, storage: Storage, settings: Settings) -> ReceiptDetail:
-    image_url = None
-    if receipt.status != ReceiptStatus.pending_upload:
-        image_url = await storage.presign_download(receipt.s3_key)
-        if image_url is None:
-            image_url = f"/api/receipts/{receipt.id}/file"
+    image_url = await _file_url(receipt, storage)
     edited = set(receipt.user_edited_fields)
     low = [
         name
@@ -68,7 +86,11 @@ async def _detail(receipt: Receipt, storage: Storage, settings: Settings) -> Rec
         if score < settings.low_confidence_threshold and name not in edited
     ]
     return ReceiptDetail.model_validate(receipt).model_copy(
-        update={"image_url": image_url, "low_confidence_fields": low}
+        update={
+            "image_url": image_url,
+            "thumbnail_url": image_url if receipt.content_type.startswith("image/") else None,
+            "low_confidence_fields": low,
+        }
     )
 
 
@@ -155,6 +177,8 @@ async def complete_upload(
 async def list_receipts(
     user: CurrentUser,
     session: SessionDep,
+    storage: StorageDep,
+    filters: Annotated[ReceiptFilters, Depends(receipt_filters)],
     limit: Annotated[int, Query(ge=1, le=100)] = 25,
     cursor: str | None = None,
     sort: SortKey = "purchase_date",
@@ -162,6 +186,7 @@ async def list_receipts(
     stmt = select(Receipt).where(
         Receipt.user_id == user.id, Receipt.status != ReceiptStatus.pending_upload
     )
+    stmt = filters.apply(stmt)
     try:
         stmt = apply_page(stmt, sort, cursor)
     except InvalidCursor as e:
@@ -170,7 +195,12 @@ async def list_receipts(
     has_more = len(rows) > limit
     rows = rows[:limit]
     return Page(
-        items=[ReceiptSummary.model_validate(r) for r in rows],
+        items=[
+            ReceiptSummary.model_validate(r).model_copy(
+                update={"thumbnail_url": await _thumbnail_url(r, storage)}
+            )
+            for r in rows
+        ],
         next_cursor=encode_cursor(sort, rows[-1]) if has_more else None,
     )
 
@@ -236,11 +266,21 @@ async def update_receipt(
         changes["tags"] = list(dict.fromkeys(t.strip() for t in tags if t.strip()))
 
     edited = list(receipt.user_edited_fields or [])
+    tracked = (*SCALAR_FIELDS, CATEGORY_FIELD)
+    category_changed = "category_id" in changes and changes["category_id"] != receipt.category_id
+    merchant_changed = "merchant" in changes and changes["merchant"] != receipt.merchant
     for name, value in changes.items():
-        if name in SCALAR_FIELDS and value != getattr(receipt, name) and name not in edited:
+        if name in tracked and value != getattr(receipt, name) and name not in edited:
             edited.append(name)
         setattr(receipt, name, value)
     receipt.user_edited_fields = edited
+
+    if category_changed and receipt.category_id is not None:
+        # Learning: the next receipt from this merchant lands in the same category.
+        await learn_rule(session, user.id, receipt.merchant, receipt.category_id)
+    elif merchant_changed and CATEGORY_FIELD not in edited:
+        # The user hasn't picked a category, so re-run the rules for the corrected name.
+        receipt.category_id = await categorize(session, user.id, receipt.merchant)
 
     await session.commit()
     await session.refresh(receipt, ["line_items"])

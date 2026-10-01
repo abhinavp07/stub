@@ -26,6 +26,7 @@ const receipt: ReceiptDetail = {
   user_edited_fields: [],
   low_confidence_fields: [],
   image_url: null,
+  thumbnail_url: null,
   line_items: [
     {
       id: "l1",
@@ -76,6 +77,26 @@ describe("buildChanges", () => {
   it("detects removing every line item", () => {
     const initial = toFormValues(receipt);
     expect(buildChanges({ ...initial, line_items: [] }, initial).lineItems).toEqual([]);
+  });
+});
+
+describe("buildChanges for organizing fields", () => {
+  it("sends category, notes and tags only when changed", () => {
+    const initial = toFormValues({ ...receipt, tags: ["work"], notes: "hi" });
+    expect(buildChanges(structuredClone(initial), initial).patch).toEqual({});
+    const values = { ...initial, category_id: "c1", notes: "  ", tags: ["work", "tax"] };
+    expect(buildChanges(values, initial).patch).toEqual({
+      category_id: "c1",
+      notes: null,
+      tags: ["work", "tax"],
+    });
+  });
+
+  it("clears the category with null", () => {
+    const initial = toFormValues({ ...receipt, category_id: "c1" });
+    expect(buildChanges({ ...initial, category_id: "" }, initial).patch).toEqual({
+      category_id: null,
+    });
   });
 });
 
