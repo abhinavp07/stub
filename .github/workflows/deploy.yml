@@ -1,0 +1,56 @@
+name: Deploy
+
+# Deploys the CDK stack (API image, worker, database, bucket, queue) after CI passes on main,
+# or on demand. Does nothing until the AWS_DEPLOY_ROLE_ARN repository variable is set; see
+# "Deploying to AWS" in the README. The frontend deploys separately through Vercel's Git
+# integration.
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  id-token: write # GitHub OIDC -> AWS role; no long-lived keys stored in GitHub
+  contents: read
+
+jobs:
+  deploy:
+    if: >-
+      vars.AWS_DEPLOY_ROLE_ARN != '' &&
+      (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: infra
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - run: uv sync --locked
+      - name: cdk deploy
+        run: >-
+          npx --yes aws-cdk@2 deploy --require-approval never
+          -c frontendOrigins="${{ vars.FRONTEND_ORIGINS }}"
+          -c appBaseUrl="${{ vars.APP_BASE_URL }}"
+          -c alertsFromEmail="${{ vars.ALERTS_FROM_EMAIL }}"
+          -c opsEmail="${{ vars.OPS_EMAIL }}"
+          --outputs-file cdk-outputs.json
+      - run: cat cdk-outputs.json >> "$GITHUB_STEP_SUMMARY"

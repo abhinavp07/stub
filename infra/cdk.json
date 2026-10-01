@@ -1,0 +1,24 @@
+{
+  "app": "uv run python app.py",
+  "watch": {
+    "include": [
+      "**"
+    ],
+    "exclude": [
+      "README.md",
+      "cdk*.json",
+      "**/__pycache__",
+      "tests",
+      ".venv"
+    ]
+  },
+  "context": {
+    "frontendOrigins": "https://receipt-tracker.example.vercel.app",
+    "appBaseUrl": "https://receipt-tracker.example.vercel.app",
+    "alertsFromEmail": "alerts@example.com",
+    "opsEmail": "ops@example.com",
+    "monthlyBudgetUsd": "20",
+    "deletionProtection": "true",
+    "@aws-cdk/aws-iam:minimizePolicies": true
+  }
+}

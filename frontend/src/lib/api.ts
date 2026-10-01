@@ -1,15 +1,20 @@
 import { filtersToParams } from "./filters";
 import type {
+  Budget,
+  BudgetInput,
+  ByCategory,
   Category,
   CategoryInput,
   LineItemInput,
   LoginRequest,
+  InsightsSummary,
   Page,
   ReceiptDetail,
   ReceiptFilters,
   ReceiptSummary,
   ReceiptUpdate,
   SignupRequest,
+  Trend,
   UploadUrlRequest,
   UploadUrlResponse,
   User,
@@ -100,3 +105,35 @@ export const categoriesApi = {
     request<Category>(`/categories/${id}`, { method: "PATCH", json: { ...body } }),
   remove: (id: string) => request<void>(`/categories/${id}`, { method: "DELETE" }),
 };
+
+export const insightsApi = {
+  summary: (month?: string) =>
+    request<InsightsSummary>(`/insights/summary${month ? `?month=${month}` : ""}`),
+  byCategory: (from?: string, to?: string) => {
+    const qs = new URLSearchParams();
+    if (from) qs.set("from", from);
+    if (to) qs.set("to", to);
+    return request<ByCategory>(`/insights/by-category?${qs.toString()}`);
+  },
+  trend: (months = 12) => request<Trend>(`/insights/trend?months=${months}`),
+};
+
+export const budgetsApi = {
+  list: () => request<Budget[]>("/budgets"),
+  set: (categoryId: string, body: BudgetInput) =>
+    request<Budget>(`/budgets/${categoryId}`, { method: "PUT", json: { ...body } }),
+  remove: (categoryId: string) => request<void>(`/budgets/${categoryId}`, { method: "DELETE" }),
+};
+
+type ExportParams = { from?: string; to?: string; category_id?: string };
+
+function exportUrl(format: "csv" | "pdf", params: ExportParams) {
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) if (v) qs.set(k, v);
+  const query = qs.toString();
+  return `/api/export/${format}${query ? `?${query}` : ""}`;
+}
+
+/** Download links for exports (plain links; the auth cookie goes along). */
+export const exportCsvUrl = (params: ExportParams) => exportUrl("csv", params);
+export const exportPdfUrl = (params: ExportParams) => exportUrl("pdf", params);

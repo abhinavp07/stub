@@ -21,7 +21,9 @@ make dev     # API on http://localhost:8000, web on http://localhost:3000
 Open http://localhost:3000, sign up, and upload any JPG, PNG or PDF. In mock mode the "extraction"
 returns one of three realistic sample receipts (grocery, restaurant, gas station) after a short
 delay, so you can try the whole flow offline. Kroger and Shell receipts are filed automatically
-(Groceries, Gas); move a Joe's Diner receipt into a category and the next one follows.
+(Groceries, Gas); move a Joe's Diner receipt into a category and the next one follows. The
+dashboard shows this month vs last, spending by category, a 12-month trend and budget
+progress; Export CSV is on the dashboard and the receipts list.
 
 <details>
 <summary>Without make</summary>
@@ -42,12 +44,17 @@ cd frontend && pnpm install && pnpm dev                  # terminal 2
 | `backend/` | FastAPI (Python 3.12), SQLAlchemy 2 async, Alembic migrations, pytest |
 | `frontend/` | Next.js 15 App Router, TypeScript, Tailwind, Vitest. `/api/*` is proxied to FastAPI |
 | `docker-compose.yml` | Postgres 16 (also creates a `receipts_test` database for tests) |
-| `.github/workflows/ci.yml` | Lint, migrations check, and tests for both apps |
+| `.github/workflows/ci.yml` | Lint, migrations check, unit tests for both apps, then the Playwright e2e |
+| `frontend/e2e/` | Playwright end-to-end test (runs against its own `receipts_e2e` database) |
+| `backend/app/worker.py` | SQS consumer that runs extraction in production |
+| `infra/` | AWS CDK (Python): VPC, RDS, S3, SQS + DLQ, App Runner, Fargate worker, SES, IAM |
+| `.github/workflows/deploy.yml` | Deploys the stack after CI passes on `main` (once AWS is configured) |
 
 ## Common tasks
 
 ```sh
 make test      # backend pytest + frontend vitest
+make e2e       # Playwright: sign up → upload → edit → dashboard → export
 make lint      # ruff, eslint, prettier, tsc
 make format    # auto-fix formatting
 make migrate   # alembic upgrade head
@@ -110,6 +117,63 @@ Textract directly, so you don't need a bucket to try real extraction.
 
 Limits: synchronous AnalyzeExpense reads single-page PDFs only. A multi-page PDF fails with a
 message asking for a photo or single-page PDF.
+
+## Deploying to AWS
+
+Production runs the same code with the AWS paths switched on:
+
+```
+browser ──▶ Vercel (Next.js) ──/api──▶ App Runner (FastAPI) ──▶ RDS Postgres (private)
+   │                                        │  └─▶ SES (budget alert emails)
+   └── presigned POST ──▶ S3 (private) ──ObjectCreated──▶ SQS ──▶ worker (Fargate) ──▶ Textract
+                                                          └─▶ DLQ after 3 failures (alarm)
+```
+
+Everything except the frontend is defined in [`infra/`](infra/) with the AWS CDK (Python).
+`cd infra && uv run pytest` checks the template's guardrails (private bucket, least-privilege
+IAM, DLQ wiring) without AWS credentials.
+
+### One-time setup
+
+1. **Bootstrap CDK** in the target account and region:
+   `npx aws-cdk@2 bootstrap aws://ACCOUNT_ID/us-east-1`
+2. **Allow GitHub to deploy** without stored keys: create an IAM OIDC identity provider for
+   `token.actions.githubusercontent.com`, and a role it can assume, restricted to this repo's
+   `main` branch (`repo:abhinavp07/stub:environment:production`). Give the role permission to
+   assume the CDK bootstrap roles (`cdk-*-deploy-role-*`, `cdk-*-file-publishing-role-*`,
+   `cdk-*-image-publishing-role-*`, `cdk-*-lookup-role-*`).
+3. **Set repository variables** (Settings → Secrets and variables → Actions → Variables):
+   `AWS_DEPLOY_ROLE_ARN`, `AWS_REGION`, `FRONTEND_ORIGINS` (e.g.
+   `https://your-app.vercel.app`), `APP_BASE_URL` (same), `ALERTS_FROM_EMAIL`, `OPS_EMAIL`.
+   Create a `production` environment if you want a manual approval step before each deploy.
+4. **Deploy.** Push to `main` (deploys after CI passes) or run the *Deploy* workflow by hand. To
+   deploy from your machine instead: `cd infra && npx aws-cdk@2 deploy -c frontendOrigins=... -c
+   appBaseUrl=... -c alertsFromEmail=... -c opsEmail=...`. The `ApiUrl` output is the App Runner
+   URL.
+5. **Confirm the emails AWS sends you:** SES verifies `ALERTS_FROM_EMAIL`, and SNS confirms the
+   `OPS_EMAIL` subscription for DLQ and cost alarms.
+6. **SES sandbox:** new accounts can only send to verified addresses. Request production access
+   in the SES console before real users get budget alerts.
+7. **Frontend on Vercel:** import the repo with root directory `frontend` and set
+   `API_BASE_URL` to the `ApiUrl` output. Next.js proxies `/api/*` there, so the browser stays on
+   one origin and the auth cookie just works.
+
+### Operating it
+
+- **Secrets** (database credentials, JWT key) are generated into Secrets Manager and injected at
+  runtime; none are in the image, the template outputs or GitHub.
+- **Migrations** run when an API instance starts, and a Postgres advisory lock serializes
+  instances that start together.
+- **Failed messages** land in the dead-letter queue after 3 attempts, and `OPS_EMAIL` gets an
+  alarm. Once the cause is fixed, redrive them from the SQS console ("Start DLQ redrive"). The
+  worker skips receipts that are already `ready`, so redriving is safe.
+- **Logs** are JSON in CloudWatch (App Runner and `/ecs` log groups).
+- **Cost:** with the defaults (db.t4g.micro, one NAT gateway, one Fargate task, the smallest App
+  Runner instance) expect roughly $60–80/month before Textract, which bills per page. The stack
+  includes a $20/month AWS Budget that emails `OPS_EMAIL` at 80% (raise it with
+  `-c monthlyBudgetUsd=`).
+- **Tearing down:** the database has deletion protection and is snapshotted on delete, and the
+  uploads bucket is retained. Both are deliberate.
 
 ## Future ideas
 

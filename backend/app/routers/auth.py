@@ -14,6 +14,12 @@ from app.auth import (
 from app.models import User
 from app.schemas.auth import LoginRequest, SignupRequest, UserOut
 from app.services.defaults import seed_default_categories
+from app.services.ratelimit import (
+    LOGIN_PER_EMAIL,
+    LOGIN_PER_IP,
+    SIGNUP_PER_IP,
+    RateLimiterDep,
+)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -23,8 +29,13 @@ _DUMMY_HASH = hash_password("timing-equalizer-not-a-real-password")
 
 @router.post("/signup", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 async def signup(
-    body: SignupRequest, response: Response, session: SessionDep, settings: SettingsDep
+    body: SignupRequest,
+    response: Response,
+    session: SessionDep,
+    settings: SettingsDep,
+    limiter: RateLimiterDep,
 ) -> User:
+    await limiter.check(SIGNUP_PER_IP, limiter.ip)
     existing = await session.scalar(select(User.id).where(User.email == body.email))
     if existing is not None:
         raise HTTPException(status.HTTP_409_CONFLICT, "An account with this email already exists")
@@ -43,8 +54,15 @@ async def signup(
 
 @router.post("/login", response_model=UserOut)
 async def login(
-    body: LoginRequest, response: Response, session: SessionDep, settings: SettingsDep
+    body: LoginRequest,
+    response: Response,
+    session: SessionDep,
+    settings: SettingsDep,
+    limiter: RateLimiterDep,
 ) -> User:
+    # Per IP stops one client spraying many accounts; per email stops a distributed guess at one.
+    await limiter.check(LOGIN_PER_IP, limiter.ip)
+    await limiter.check(LOGIN_PER_EMAIL, body.email)
     user = await session.scalar(select(User).where(User.email == body.email))
     if user is None:
         verify_password(_DUMMY_HASH, body.password)

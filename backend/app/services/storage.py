@@ -60,6 +60,7 @@ class Storage(Protocol):
 
     async def delete(self, key: str) -> None: ...
     async def document_ref(self, key: str) -> DocumentRef: ...
+    async def read_bytes(self, key: str) -> bytes: ...
 
 
 # --- Local disk -----------------------------------------------------------------------------
@@ -118,6 +119,9 @@ class LocalStorage:
     async def document_ref(self, key: str) -> DocumentRef:
         return DocumentRef(data=await asyncio.to_thread(self._path(key).read_bytes))
 
+    async def read_bytes(self, key: str) -> bytes:
+        return await asyncio.to_thread(self._path(key).read_bytes)
+
     def write(self, key: str, data: bytes) -> None:
         path = self._path(key)
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -172,6 +176,10 @@ class S3Storage:
 
     async def document_ref(self, key: str) -> DocumentRef:
         return DocumentRef(s3_bucket=self.bucket, s3_key=key)
+
+    async def read_bytes(self, key: str) -> bytes:
+        obj = await asyncio.to_thread(self._s3.get_object, Bucket=self.bucket, Key=key)
+        return await asyncio.to_thread(obj["Body"].read)
 
 
 def build_storage(settings: Settings) -> Storage:

@@ -83,7 +83,7 @@ describe("AuthForm", () => {
     await user.type(screen.getByLabelText("Email"), "a@b.co");
     await user.type(screen.getByLabelText("Password"), "pw");
     await user.click(screen.getByRole("button", { name: "Log in" }));
-    await waitFor(() => expect(replace).toHaveBeenCalledWith("/receipts"));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/dashboard"));
   });
 
   it("shows the API's error message", async () => {

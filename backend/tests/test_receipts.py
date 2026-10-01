@@ -112,10 +112,15 @@ async def test_complete_without_upload_fails(client: AsyncClient) -> None:
     assert done.json() == {"detail": "Upload not found. Try uploading again."}
 
 
-async def test_complete_twice_conflicts(client: AsyncClient) -> None:
+async def test_complete_is_idempotent(client: AsyncClient) -> None:
+    """A retried /complete (or one arriving after the S3 event started processing in queue
+    mode) reports the current state and doesn't process again."""
     receipt = await upload_receipt(client)
+    await client.patch(f"/api/receipts/{receipt['id']}", json={"merchant": "Kept"})
     again = await client.post(f"/api/receipts/{receipt['id']}/complete")
-    assert again.status_code == 409
+    assert again.status_code == 200
+    assert again.json()["status"] == "ready"
+    assert again.json()["merchant"] == "Kept"
 
 
 class _FailingExtractor:
@@ -366,3 +371,58 @@ async def test_low_confidence_fields_reported_until_edited(client: AsyncClient) 
 
     resp = await client.patch(f"/api/receipts/{receipt['id']}", json={"total": "1.00"})
     assert resp.json()["low_confidence_fields"] == ["tax"]
+
+
+async def test_edits_made_during_processing_are_not_overwritten(client: AsyncClient) -> None:
+    """The user edits the receipt while extraction is still running; saving the extraction
+    results must respect those edits rather than clobber them with a stale copy."""
+    from sqlalchemy import update
+
+    from app.db import SessionLocal
+    from app.models import Receipt
+
+    class _UserEditsMidway:
+        async def analyze(self, doc: DocumentRef, key: str) -> dict[str, Any]:
+            rid = uuid.UUID(Path(key).stem)
+            async with SessionLocal() as s:
+                await s.execute(
+                    update(Receipt)
+                    .where(Receipt.id == rid)
+                    .values(merchant="Typed by user", user_edited_fields=["merchant"])
+                )
+                await s.commit()
+            return json.loads((MOCK_RESPONSES_DIR / "grocery.json").read_text())
+
+    app.dependency_overrides[get_extractor] = _UserEditsMidway
+    receipt = await upload_receipt(client)
+    assert receipt["status"] == "ready"
+    assert receipt["merchant"] == "Typed by user"
+    assert receipt["total"] == "25.11"  # unedited fields still extracted
+    assert receipt["user_edited_fields"] == ["merchant"]
+
+
+async def test_receipt_deleted_during_processing(client: AsyncClient) -> None:
+    from sqlalchemy import delete
+
+    from app.db import SessionLocal
+    from app.models import Receipt
+
+    class _DeletedMidway:
+        async def analyze(self, doc: DocumentRef, key: str) -> dict[str, Any]:
+            async with SessionLocal() as s:
+                await s.execute(delete(Receipt).where(Receipt.id == uuid.UUID(Path(key).stem)))
+                await s.commit()
+            return json.loads((MOCK_RESPONSES_DIR / "grocery.json").read_text())
+
+    app.dependency_overrides[get_extractor] = _DeletedMidway
+    resp = await client.post(
+        "/api/receipts/upload-url",
+        json={"filename": "x.jpg", "content_type": "image/jpeg", "size_bytes": len(JPEG_BYTES)},
+    )
+    body = resp.json()
+    await client.post(
+        body["upload_url"], data=body["fields"], files={"file": ("x.jpg", JPEG_BYTES, "image/jpeg")}
+    )
+    # Processing finds the row gone and quietly stops; nothing is resurrected.
+    assert (await client.post(f"/api/receipts/{body['receipt_id']}/complete")).status_code == 200
+    assert (await client.get(f"/api/receipts/{body['receipt_id']}")).status_code == 404

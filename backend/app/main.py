@@ -1,12 +1,20 @@
-import logging
-
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config import get_settings
-from app.routers import auth, categories, health, local_storage, receipts
+from app.logging_config import configure_logging
+from app.routers import (
+    auth,
+    budgets,
+    categories,
+    export,
+    health,
+    insights,
+    local_storage,
+    receipts,
+)
 
 
 def _validation_message(exc: RequestValidationError) -> str:
@@ -21,7 +29,7 @@ def _validation_message(exc: RequestValidationError) -> str:
 
 def create_app() -> FastAPI:
     settings = get_settings()
-    logging.basicConfig(level=logging.INFO)
+    configure_logging(settings.log_format, settings.log_level)
     app = FastAPI(title="Receipt Tracker API", version="0.1.0")
     app.add_middleware(
         CORSMiddleware,
@@ -38,7 +46,16 @@ def create_app() -> FastAPI:
             content={"detail": _validation_message(exc)},
         )
 
-    for module in (health, auth, receipts, categories, local_storage):
+    for module in (
+        health,
+        auth,
+        receipts,
+        categories,
+        budgets,
+        insights,
+        export,
+        local_storage,
+    ):
         app.include_router(module.router, prefix="/api")
     return app
 

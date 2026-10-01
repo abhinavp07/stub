@@ -18,7 +18,7 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
   if (loggedIn && isAuthPage) {
-    return NextResponse.redirect(new URL("/receipts", req.url));
+    return NextResponse.redirect(new URL("/dashboard", req.url));
   }
   return NextResponse.next();
 }

@@ -4,17 +4,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Category
 
+# Colors are the validated categorical palette in its fixed slot order (CVD-checked for
+# adjacent marks). Eight hues is the ceiling for a categorical palette, so Travel gets a darker
+# blue step and Other a neutral gray; charts always pair color with a visible name.
 DEFAULT_CATEGORIES: list[tuple[str, str]] = [
-    ("Groceries", "#16a34a"),
-    ("Dining", "#ea580c"),
-    ("Transport", "#2563eb"),
-    ("Gas", "#ca8a04"),
-    ("Shopping", "#db2777"),
-    ("Entertainment", "#9333ea"),
-    ("Health", "#dc2626"),
-    ("Utilities", "#0891b2"),
-    ("Travel", "#4f46e5"),
-    ("Other", "#6b7280"),
+    ("Groceries", "#2a78d6"),
+    ("Dining", "#eb6834"),
+    ("Transport", "#1baf7a"),
+    ("Gas", "#eda100"),
+    ("Shopping", "#e87ba4"),
+    ("Entertainment", "#008300"),
+    ("Health", "#4a3aa7"),
+    ("Utilities", "#e34948"),
+    ("Travel", "#184f95"),
+    ("Other", "#8a8984"),
 ]
 
 

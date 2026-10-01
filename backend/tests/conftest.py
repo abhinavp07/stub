@@ -20,6 +20,9 @@ os.environ.update(
     LOCAL_UPLOAD_DIR=_UPLOAD_DIR,
     MOCK_TEXTRACT_DELAY_SECONDS="0",
     JWT_SECRET="test-secret-that-is-long-enough-for-hs256",
+    RATE_LIMIT_ENABLED="false",  # rate-limit tests turn it back on explicitly
+    EMAIL_MODE="log",
+    SQS_QUEUE_URL="",
 )
 
 from alembic import command  # noqa: E402
@@ -68,6 +71,7 @@ async def _clean_tables() -> AsyncIterator[None]:
     # Deleting users cascades to all user data and leaves the seeded global rules in place.
     async with engine.begin() as conn:
         await conn.execute(text("DELETE FROM users"))
+        await conn.execute(text("DELETE FROM rate_limits"))
     app.dependency_overrides.clear()
 
 

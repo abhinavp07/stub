@@ -7,8 +7,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { authApi } from "@/lib/api";
 
 const NAV = [
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/receipts", label: "Receipts" },
   { href: "/upload", label: "Upload" },
+  { href: "/budgets", label: "Budgets" },
   { href: "/categories", label: "Categories" },
 ];
 
@@ -39,10 +41,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </a>
       <header className="border-b border-gray-200 bg-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
-          <Link href="/receipts" className="font-semibold tracking-tight">
+          <Link href="/dashboard" className="font-semibold tracking-tight">
             Receipt Tracker
           </Link>
-          <nav aria-label="Main" className="flex gap-1">
+          <nav aria-label="Main" className="-mx-1 flex max-w-full gap-1 overflow-x-auto px-1">
             {NAV.map((item) => {
               const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (

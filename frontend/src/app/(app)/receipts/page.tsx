@@ -3,13 +3,13 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 
 import { CategoryChip } from "@/components/CategoryChip";
 import { ReceiptFilterBar } from "@/components/ReceiptFilterBar";
 import { NeedsReviewFlag, StatusBadge } from "@/components/StatusBadge";
 import { Button, Skeleton } from "@/components/ui";
-import { receiptsApi } from "@/lib/api";
+import { exportCsvUrl, exportPdfUrl, receiptsApi } from "@/lib/api";
 import { activeFilterCount, filtersToParams, paramsToFilters } from "@/lib/filters";
 import { formatDate, formatMoney } from "@/lib/format";
 import { useCategoryMap } from "@/lib/hooks";
@@ -64,18 +64,41 @@ function Receipts() {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const receipts = query.data?.pages.flatMap((p) => p.items) ?? [];
+  const exportFilters = {
+    from: filters.date_from,
+    to: filters.date_to,
+    category_id: filters.category_id,
+  };
   const filtered = Boolean(filters.q) || activeFilterCount(filters) > 0;
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">Receipts</h1>
-        <Link
-          href="/upload"
-          className="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-        >
-          Upload receipts
-        </Link>
+        <div className="flex gap-2">
+          <a
+            href={exportCsvUrl(exportFilters)}
+            download
+            title="Exports receipts in the selected date range and category"
+            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+          >
+            Export CSV
+          </a>
+          <a
+            href={exportPdfUrl(exportFilters)}
+            download
+            title="A PDF report with totals and the receipt images, for the selected date range and category"
+            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+          >
+            PDF
+          </a>
+          <Link
+            href="/upload"
+            className="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+          >
+            Upload receipts
+          </Link>
+        </div>
       </div>
 
       <ReceiptFilterBar filters={filters} onChange={setFilters} />
@@ -124,7 +147,8 @@ function Receipts() {
 }
 
 function Thumbnail({ receipt }: { receipt: ReceiptSummary }) {
-  if (receipt.thumbnail_url) {
+  const [failed, setFailed] = useState(false);
+  if (receipt.thumbnail_url && !failed) {
     return (
       // Dynamic, short-lived URLs: next/image optimization doesn't apply.
       // eslint-disable-next-line @next/next/no-img-element
@@ -132,6 +156,7 @@ function Thumbnail({ receipt }: { receipt: ReceiptSummary }) {
         src={receipt.thumbnail_url}
         alt=""
         loading="lazy"
+        onError={() => setFailed(true)}
         className="h-12 w-12 shrink-0 rounded-md border border-gray-200 bg-gray-100 object-cover"
       />
     );
@@ -141,7 +166,7 @@ function Thumbnail({ receipt }: { receipt: ReceiptSummary }) {
       aria-hidden
       className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-gray-200 bg-gray-50 text-[10px] font-semibold text-gray-500"
     >
-      {receipt.content_type === "application/pdf" ? "PDF" : "—"}
+      {receipt.content_type === "application/pdf" ? "PDF" : "IMG"}
     </div>
   );
 }

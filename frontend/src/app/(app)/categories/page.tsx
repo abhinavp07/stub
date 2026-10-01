@@ -10,7 +10,17 @@ import { categoriesApi } from "@/lib/api";
 import { useCategories, useDebounced } from "@/lib/hooks";
 import type { Category, CategoryInput } from "@/lib/types";
 
-const PALETTE = ["#16a34a", "#ea580c", "#2563eb", "#ca8a04", "#db2777", "#9333ea", "#0891b2"];
+// The validated categorical palette, in slot order.
+const PALETTE = [
+  "#2a78d6",
+  "#eb6834",
+  "#1baf7a",
+  "#eda100",
+  "#e87ba4",
+  "#008300",
+  "#4a3aa7",
+  "#e34948",
+];
 
 export default function CategoriesPage() {
   const { data, isPending, isError, error, refetch } = useCategories();

@@ -152,3 +152,150 @@ Choices made where the spec was ambiguous or silent. Newest at the bottom of eac
   `DELETE FROM users`, which cascades to user data and leaves global rules alone.
 - **Alembic logging.** `env.py` now passes `disable_existing_loggers=False`; previously,
   running migrations in-process silenced the app's loggers.
+
+## Phase 3 — Insights & export
+
+- **What counts as spending:** receipts that are `ready` and have both a `purchase_date` and a
+  `total`. They're bucketed by purchase date, a plain calendar date with no timezone math. "This
+  month" defaults to the current UTC month. Refunds (negative totals) reduce the totals.
+- **Endpoint shapes.**
+  - `summary` adds `needs_review_count` (all-time) so the dashboard needs one call.
+  - `change_pct` is `null` when the previous month is zero, since a percentage of nothing is
+    meaningless.
+  - `by-category` takes inclusive `from`/`to` (both optional) and lists uncategorized spending as
+    `category_id: null`.
+  - `trend` takes `months` (1–36) and an optional `end=YYYY-MM`. It always returns every month in
+    the window, zero-filled, and adds a per-category breakdown with `by_category=true`.
+- **Budgets.** `GET /budgets` reports spending for the current month (or `?month=`). Status is
+  `warning` from the alert threshold up to and including 100%, and `over` only *above* 100%,
+  matching "amber at the threshold, red above 100%". `PUT` upserts. Deleting a category removes
+  its budget (cascade).
+- **CSV export.**
+  - Rows are streamed from a server-side cursor in batches of 500, one per ready receipt, oldest
+    first, undated last.
+  - Columns are exactly the spec's.
+  - Excel compatibility: UTF-8 BOM (so "Café" survives Excel), CRLF line endings, tags joined with
+    "; ", and newlines in notes collapsed to spaces.
+  - Formula injection: text cells starting with `= + - @` get a leading `'`. Numeric columns are
+    never touched, so a refund still exports as `-5.00`.
+  - Same filters as the spec (`from`, `to`, `category_id`, plus `none`).
+- **Charts follow the data-viz method.**
+  - The default category colors were re-seeded from a palette validated for color-blind
+    separation (8 hues in a fixed order; Travel gets a darker blue and Other a neutral gray, since
+    a 9th hue can't validate). This only affects new users.
+  - Category colors are user-editable, so charts never rely on color alone. The donut always has a
+    legend table with names, amounts and shares. The trend has a "Show as table" view. Budget bars
+    pair the status color with an icon and a label ("✓ On track", "▲ Near limit", "! Over budget").
+  - The donut shows at most 6 segments (the top 5 plus "Everything else"), drops non-positive
+    categories, and has 2px surface gaps between segments.
+  - The trend is a single series in one hue with rounded data ends and a hover tooltip.
+  - Month labels use "Jan ’26" style, so they can't be read as "January 26th".
+- **Exports are plain links** (`<a href="/api/export/csv?…" download>`): the cookie
+  authenticates them and the browser handles the download natively.
+- **E2E isolation.** Playwright starts its own API (:8100) and Next dev server (:3100) against a
+  separate `receipts_e2e` database. `scripts/ensure_database.py` creates it if missing, then
+  migrations run. The test sets the purchase date to the 15th of the current UTC month, so it
+  lands in "this month" on the dashboard regardless of when it runs.
+- **Bug fixed: edits during processing were overwritten.** The background task loaded the receipt,
+  waited on extraction, then saved its stale copy, which overwrote anything the user changed in
+  the meantime, including `user_edited_fields`. Now extraction runs first, then the row is
+  re-read with `SELECT … FOR UPDATE` before results are applied. Mutating receipt endpoints also
+  lock the row. Regression tests cover an edit and a delete made mid-extraction.
+- **Bug fixed: `CORS_ORIGINS` from `.env` crashed startup.** pydantic-settings JSON-decodes list
+  fields from the environment, so the comma-separated value in `.env.example` failed. The field is
+  now `NoDecode` with an explicit parser that accepts comma-separated values or a JSON array. A
+  test loads `.env.example` itself.
+
+## Phase 4 — Production
+
+- **AWS services added** (approved for this phase): SQS + DLQ, S3 event notifications, SES, RDS
+  Postgres, App Runner (API), ECS Fargate (worker), ECR (image), Secrets Manager, VPC with one NAT
+  gateway, CloudWatch alarms, SNS (ops email) and AWS Budgets.
+- **Dependencies added:** `fpdf2` (PDF drawing; brings in Pillow, which also downscales receipt
+  photos), `pypdf` (appends receipts uploaded as PDFs), and for `infra/`, `aws-cdk-lib` and
+  `constructs`. Rate limiting and JSON logging are built in rather than adding `slowapi` or
+  `python-json-logger`. **Sentry was skipped** (optional in the spec); JSON logs in CloudWatch
+  cover the basics.
+
+### Async pipeline
+- **The S3 event is the upload trigger.** In queue mode (`SQS_QUEUE_URL` set) the API never
+  enqueues uploads, because doing so as well as the S3 event would process every upload twice and
+  pay Textract twice. Reprocessing has no S3 event, so the API sends
+  `{"type": "reprocess", "receipt_id": ...}`. Queue mode requires `STORAGE_MODE=s3`, and settings
+  refuse anything else.
+- **`/complete` is idempotent** (it was a 409 before). The S3 event can reach the worker before
+  the browser calls `/complete`; the worker treats an existing upload as complete and starts, and
+  `/complete` just reports the current state.
+- **Idempotency and duplicates.** The worker skips receipts already `ready` and leaves `failed`
+  ones for an explicit reprocess. A per-receipt Postgres advisory lock, held on a dedicated
+  connection across processing, stops two workers extracting the same receipt when SQS delivers a
+  message twice. Tests show three deliveries cost one Textract call.
+- **What reaches the DLQ.** Messages are deleted only after handling. Infrastructure errors and
+  unparseable messages are retried, and after 3 receives they move to the DLQ, which is alarmed.
+  Extraction failures *don't* go there: they mark the receipt `failed` with a user-facing message,
+  because retrying a bad photo won't help.
+- **Visibility timeout** is 3 minutes, longer than any extraction. The worker finishes in-flight
+  messages on SIGTERM (ECS stop timeout 60s) and scales 1–4 tasks on queue depth.
+
+### Budget alerts
+- **When checks run:** after a receipt finishes processing, after a PATCH changes a receipt's
+  total, date or category, and after a budget is created or changed (lowering a limit can cross
+  the threshold). Only the **current** month alerts; an email about last month is noise.
+- **At most once per category per month.** This is enforced by a unique
+  `(category_id, month)` row in `budget_alerts`, inserted with `ON CONFLICT DO NOTHING` and
+  committed before the email is sent. Concurrent checks can't both send (tested with 5 in
+  parallel), and a failed send is logged, not retried. If the first crossing is already over
+  100%, the single email says "over budget".
+- **Email modes:** `EMAIL_MODE=log` in development (logs instead of sending) and `ses` in
+  production. Plain-text email keeps it simple and spam-filter-friendly.
+
+### PDF report
+- `GET /export/pdf` takes the same filters as the CSV export. It has a summary page (total, by
+  category, every receipt), then one page per image. Receipts uploaded as PDFs have their own
+  pages appended.
+- Images are re-encoded to JPEG at 1600px max, so a month of 10 MB photos stays a few MB.
+  Attachments are capped at the first 100 receipts (the report says so); unreadable files get a
+  note instead of failing the report.
+- The built-in PDF fonts are Latin-1: curly quotes and dashes are mapped to ASCII, and anything
+  else outside Latin-1 becomes "?". Bundling a Unicode TTF would fix it at the cost of about 700 KB.
+
+### Hardening
+- **Rate limits** are fixed-window counters in Postgres (`rate_limits`, one upserted row per
+  key), so limits hold across every App Runner instance without adding Redis:
+  - login: 20 per 5 min per IP and 10 per 15 min per email;
+  - signup: 10 per hour per IP;
+  - upload URLs: 120 per 10 min per user.
+
+  Responses are 429 with `Retry-After`. The worker prunes stale counters hourly.
+- **Client IP:** `X-Forwarded-For` is only trusted for `TRUSTED_PROXY_HOPS` hops (production: 2,
+  Vercel then App Runner), reading from the right so a client can't choose its own rate-limit key.
+- **Logs:** `LOG_FORMAT=json` writes one object per line (timestamp, level, logger, message,
+  extra fields, exception) and routes uvicorn's loggers the same way.
+
+### Infrastructure (`infra/`)
+- **Where things run:**
+  - API on **App Runner** (as the spec suggests), egressing through a VPC connector.
+  - Worker on **ECS Fargate**, because App Runner only runs request-driven services, not
+    long-polling consumers.
+  - Both use the same image (`backend/Dockerfile`, non-root, JSON logs); the worker overrides the
+    command.
+- **Network:** public, private-with-egress (API connector and worker) and isolated (RDS)
+  subnets. One NAT gateway (about $32/month) keeps AWS API access simple, and a free S3 gateway
+  endpoint keeps S3 traffic off the NAT.
+- **Least privilege**, checked by `infra/tests`:
+  - API: S3 put/get/delete on `users/*`, send to the queue, SES send from the one identity, read
+    its two secrets.
+  - Worker: S3 get, consume the queue, SES send, read the database secret only (not the JWT key).
+  - The only `*` resources are `textract:AnalyzeExpense` and `ecr:GetAuthorizationToken`, which
+    AWS doesn't allow scoping, plus CDK's log-retention helper.
+- **Database credentials:** the RDS-generated secret is injected whole as `DATABASE_SECRET`, and
+  the app builds the URL from it (URL-escaping the password), because App Runner can't inject
+  individual JSON keys.
+- **Frontend on Vercel**, not Amplify. It needs no infrastructure, and the `/api` rewrite keeps
+  cookies first-party. CORS on the bucket allows the frontend origin for direct uploads and image
+  loads.
+- **Deploy workflow:** GitHub OIDC (no stored AWS keys). It runs after CI succeeds on `main`, or
+  manually, and does nothing until `AWS_DEPLOY_ROLE_ARN` is set, so pushes don't fail before AWS
+  is configured.
+- **Not deployed by me:** the stack is synthesized and tested here (`cdk synth`, CloudFormation
+  assertions), but no AWS account was touched.

@@ -135,3 +135,61 @@ export interface ReceiptFilters {
   tag?: string;
   sort?: ReceiptSort;
 }
+
+export interface InsightsSummary {
+  month: string; // YYYY-MM
+  currency: string;
+  total: Money;
+  receipt_count: number;
+  previous_month: string;
+  previous_total: Money;
+  previous_receipt_count: number;
+  change_pct: string | null;
+  needs_review_count: number;
+}
+
+export interface CategoryTotal {
+  category_id: string | null;
+  name: string;
+  color: string;
+  total: Money;
+  receipt_count: number;
+}
+
+export interface ByCategory {
+  currency: string;
+  total: Money;
+  items: CategoryTotal[];
+}
+
+export interface TrendPoint {
+  month: string;
+  total: Money;
+  receipt_count: number;
+  by_category: { category_id: string | null; total: Money }[] | null;
+}
+
+export interface Trend {
+  currency: string;
+  months: TrendPoint[];
+}
+
+export type BudgetStatus = "ok" | "warning" | "over";
+
+export interface Budget {
+  category_id: string;
+  category_name: string;
+  color: string;
+  monthly_limit: Money;
+  alert_threshold_pct: number;
+  month: string;
+  spent: Money;
+  remaining: Money;
+  percent_used: string;
+  status: BudgetStatus;
+}
+
+export interface BudgetInput {
+  monthly_limit: Money;
+  alert_threshold_pct?: number;
+}

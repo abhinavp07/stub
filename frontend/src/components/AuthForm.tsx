@@ -34,7 +34,7 @@ type Mode = "login" | "signup";
 
 /** Only allow same-site relative redirects, never "//evil.com". */
 function safeNext(next: string | null): string {
-  return next && next.startsWith("/") && !next.startsWith("//") ? next : "/receipts";
+  return next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
 }
 
 export function AuthForm({ mode }: { mode: Mode }) {

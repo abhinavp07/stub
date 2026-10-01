@@ -2,6 +2,7 @@ import asyncio
 from logging.config import fileConfig
 
 from alembic import context
+from sqlalchemy import text
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
@@ -26,9 +27,17 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
+# Arbitrary constant; every instance that starts up and migrates takes the same lock.
+MIGRATION_LOCK_ID = 727_001
+
+
 def do_run_migrations(connection: Connection) -> None:
     context.configure(connection=connection, target_metadata=target_metadata)
     with context.begin_transaction():
+        # Several API containers can start at once and all run `alembic upgrade head`; the
+        # transaction-scoped advisory lock makes them take turns (the later ones find nothing
+        # left to do).
+        connection.execute(text("SELECT pg_advisory_xact_lock(:id)"), {"id": MIGRATION_LOCK_ID})
         context.run_migrations()
 
 

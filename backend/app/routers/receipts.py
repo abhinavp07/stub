@@ -10,7 +10,6 @@ from sqlalchemy.orm import selectinload
 
 from app.auth import CurrentUser, SessionDep, SettingsDep
 from app.config import Settings
-from app.db import SessionLocal
 from app.models import Category, LineItem, Receipt, ReceiptStatus, User
 from app.schemas.common import Page
 from app.schemas.receipts import (
@@ -21,14 +20,12 @@ from app.schemas.receipts import (
     UploadUrlRequest,
     UploadUrlResponse,
 )
+from app.services.alerts import Mailer, check_budget_alerts_task, get_mailer
 from app.services.categorize import categorize, learn_rule
+from app.services.dispatch import Dispatcher, get_dispatcher
 from app.services.pagination import InvalidCursor, SortKey, apply_page, encode_cursor
-from app.services.processing import (
-    CATEGORY_FIELD,
-    LINE_ITEMS_FIELD,
-    SCALAR_FIELDS,
-    process_receipt,
-)
+from app.services.processing import CATEGORY_FIELD, LINE_ITEMS_FIELD, SCALAR_FIELDS
+from app.services.ratelimit import UPLOAD_PER_USER, RateLimiterDep
 from app.services.receipt_filters import ReceiptFilters, receipt_filters
 from app.services.storage import (
     ALLOWED_CONTENT_TYPES,
@@ -37,25 +34,33 @@ from app.services.storage import (
     get_storage,
     receipt_key,
 )
-from app.services.textract import Extractor, get_extractor
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/receipts", tags=["receipts"])
 
 StorageDep = Annotated[Storage, Depends(get_storage)]
-ExtractorDep = Annotated[Extractor, Depends(get_extractor)]
+DispatcherDep = Annotated[Dispatcher, Depends(get_dispatcher)]
+MailerDep = Annotated[Mailer, Depends(get_mailer)]
 
 NOT_FOUND = "Receipt not found"
 
 
 async def _get_owned(
-    session: AsyncSession, user: User, receipt_id: uuid.UUID, *, with_items: bool = False
+    session: AsyncSession,
+    user: User,
+    receipt_id: uuid.UUID,
+    *,
+    with_items: bool = False,
+    for_update: bool = False,
 ) -> Receipt:
     """Load a receipt owned by `user`. Someone else's receipt is a 404, not a 403, so its
-    existence isn't revealed."""
+    existence isn't revealed. `for_update` locks the row so a write can't interleave with
+    background processing saving its results."""
     stmt = select(Receipt).where(Receipt.id == receipt_id, Receipt.user_id == user.id)
     if with_items:
         stmt = stmt.options(selectinload(Receipt.line_items))
+    if for_update:
+        stmt = stmt.with_for_update(of=Receipt)
     receipt = await session.scalar(stmt)
     if receipt is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, NOT_FOUND)
@@ -94,23 +99,6 @@ async def _detail(receipt: Receipt, storage: Storage, settings: Settings) -> Rec
     )
 
 
-def _schedule(
-    tasks: BackgroundTasks,
-    receipt: Receipt,
-    storage: Storage,
-    extractor: Extractor,
-    settings: Settings,
-) -> None:
-    tasks.add_task(
-        process_receipt,
-        receipt.id,
-        SessionLocal,
-        storage,
-        extractor,
-        settings.low_confidence_threshold,
-    )
-
-
 @router.post("/upload-url", response_model=UploadUrlResponse, status_code=201)
 async def create_upload_url(
     body: UploadUrlRequest,
@@ -118,7 +106,9 @@ async def create_upload_url(
     session: SessionDep,
     settings: SettingsDep,
     storage: StorageDep,
+    limiter: RateLimiterDep,
 ) -> UploadUrlResponse:
+    await limiter.check(UPLOAD_PER_USER, str(user.id))
     if body.content_type not in ALLOWED_CONTENT_TYPES:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST, "Only JPG, PNG and PDF files are supported"
@@ -154,11 +144,13 @@ async def complete_upload(
     session: SessionDep,
     settings: SettingsDep,
     storage: StorageDep,
-    extractor: ExtractorDep,
+    dispatcher: DispatcherDep,
 ) -> ReceiptDetail:
-    receipt = await _get_owned(session, user, receipt_id, with_items=True)
+    """Idempotent: in queue mode the S3 event may already have started processing before the
+    browser calls this, and a retried call should just report the current state."""
+    receipt = await _get_owned(session, user, receipt_id, with_items=True, for_update=True)
     if receipt.status != ReceiptStatus.pending_upload:
-        raise HTTPException(status.HTTP_409_CONFLICT, "This receipt has already been uploaded")
+        return await _detail(receipt, storage, settings)
     size = await storage.object_size(receipt.s3_key)
     if size is None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Upload not found. Try uploading again.")
@@ -169,7 +161,7 @@ async def complete_upload(
         )
     receipt.status = ReceiptStatus.processing
     await session.commit()
-    _schedule(tasks, receipt, storage, extractor, settings)
+    await dispatcher.upload_completed(tasks, receipt.id)
     return await _detail(receipt, storage, settings)
 
 
@@ -243,12 +235,14 @@ async def get_receipt_file(
 async def update_receipt(
     receipt_id: uuid.UUID,
     body: ReceiptUpdate,
+    tasks: BackgroundTasks,
     user: CurrentUser,
     session: SessionDep,
     settings: SettingsDep,
     storage: StorageDep,
+    mailer: MailerDep,
 ) -> ReceiptDetail:
-    receipt = await _get_owned(session, user, receipt_id, with_items=True)
+    receipt = await _get_owned(session, user, receipt_id, with_items=True, for_update=True)
     changes: dict[str, Any] = body.model_dump(exclude_unset=True)
 
     if changes.get("category_id") is not None:
@@ -283,6 +277,10 @@ async def update_receipt(
         receipt.category_id = await categorize(session, user.id, receipt.merchant)
 
     await session.commit()
+    if receipt.status == ReceiptStatus.ready and {"total", "purchase_date", "category_id"} & set(
+        changes
+    ):
+        tasks.add_task(check_budget_alerts_task, user.id, mailer, settings.app_base_url)
     await session.refresh(receipt, ["line_items"])
     return await _detail(receipt, storage, settings)
 
@@ -296,7 +294,7 @@ async def replace_line_items(
     settings: SettingsDep,
     storage: StorageDep,
 ) -> ReceiptDetail:
-    receipt = await _get_owned(session, user, receipt_id, with_items=True)
+    receipt = await _get_owned(session, user, receipt_id, with_items=True, for_update=True)
     receipt.line_items = [LineItem(position=i, **item.model_dump()) for i, item in enumerate(body)]
     if LINE_ITEMS_FIELD not in receipt.user_edited_fields:
         receipt.user_edited_fields = [*receipt.user_edited_fields, LINE_ITEMS_FIELD]
@@ -313,15 +311,15 @@ async def reprocess_receipt(
     session: SessionDep,
     settings: SettingsDep,
     storage: StorageDep,
-    extractor: ExtractorDep,
+    dispatcher: DispatcherDep,
 ) -> ReceiptDetail:
-    receipt = await _get_owned(session, user, receipt_id, with_items=True)
+    receipt = await _get_owned(session, user, receipt_id, with_items=True, for_update=True)
     if receipt.status not in (ReceiptStatus.ready, ReceiptStatus.failed):
         raise HTTPException(status.HTTP_409_CONFLICT, "This receipt can't be reprocessed right now")
     receipt.status = ReceiptStatus.processing
     receipt.error_message = None
     await session.commit()
-    _schedule(tasks, receipt, storage, extractor, settings)
+    await dispatcher.reprocess(tasks, receipt.id)
     return await _detail(receipt, storage, settings)
 
 
@@ -329,7 +327,7 @@ async def reprocess_receipt(
 async def delete_receipt(
     receipt_id: uuid.UUID, user: CurrentUser, session: SessionDep, storage: StorageDep
 ) -> None:
-    receipt = await _get_owned(session, user, receipt_id)
+    receipt = await _get_owned(session, user, receipt_id, for_update=True)
     # File first: if that fails the row stays, so the user can retry and nothing is orphaned.
     try:
         await storage.delete(receipt.s3_key)
