@@ -7,6 +7,7 @@ export type ISODateTime = string;
 
 export interface HealthResponse {
   status: "ok";
+  textract_mode: "mock" | "aws";
 }
 
 export interface User {

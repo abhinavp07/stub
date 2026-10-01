@@ -1,9 +1,10 @@
 import { readFile } from "node:fs/promises";
+import path from "node:path";
 
 import { expect, test } from "@playwright/test";
 
-// A tiny but valid-looking JPEG; the mock extractor never reads the bytes.
-const JPEG = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(2048)]);
+// A demo receipt: in mock mode the API recognizes it and returns its data.
+const DEMO_RECEIPT = path.join(__dirname, "../../demo-receipts/kroger-groceries.png");
 
 test("sign up → upload → edit → dashboard → export", async ({ page }) => {
   const email = `e2e-${Date.now()}@example.com`;
@@ -22,17 +23,14 @@ test("sign up → upload → edit → dashboard → export", async ({ page }) =>
 
   // 2. Upload (mock extraction)
   await page.getByRole("link", { name: "Upload", exact: true }).click();
-  await page.getByLabel("Choose receipt files").setInputFiles({
-    name: "receipt.jpg",
-    mimeType: "image/jpeg",
-    buffer: JPEG,
-  });
+  await expect(page.getByText("Demo mode:")).toBeVisible();
+  await page.getByLabel("Choose receipt files").setInputFiles(DEMO_RECEIPT);
   await page.getByRole("link", { name: "View receipt" }).click();
 
   // Processing → ready without a manual refresh.
   await expect(page.getByText("Ready", { exact: true })).toBeVisible();
   const merchant = page.getByLabel("Merchant", { exact: true });
-  await expect(merchant).not.toHaveValue("");
+  await expect(merchant).toHaveValue("Kroger");
 
   // 3. Edit
   await merchant.fill("E2E Coffee Roasters");

@@ -5,6 +5,7 @@ import type {
   ByCategory,
   Category,
   CategoryInput,
+  HealthResponse,
   LineItemInput,
   LoginRequest,
   InsightsSummary,
@@ -67,6 +68,10 @@ export async function request<T>(path: string, { json, headers, ...init }: Reque
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }
+
+export const metaApi = {
+  health: () => request<HealthResponse>("/health"),
+};
 
 export const authApi = {
   me: () => request<User>("/auth/me"),

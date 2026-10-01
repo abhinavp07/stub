@@ -13,8 +13,8 @@
     ]
   },
   "context": {
-    "frontendOrigins": "https://receipt-tracker.example.vercel.app",
-    "appBaseUrl": "https://receipt-tracker.example.vercel.app",
+    "frontendOrigins": "https://stub.example.vercel.app",
+    "appBaseUrl": "https://stub.example.vercel.app",
     "alertsFromEmail": "alerts@example.com",
     "opsEmail": "ops@example.com",
     "monthlyBudgetUsd": "20",

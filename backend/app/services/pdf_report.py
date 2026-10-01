@@ -83,11 +83,11 @@ def build_report(
         if date_from or date_to
         else "all dates"
     )
-    pdf = _Report("Receipt report")
+    pdf = _Report("Stub receipt report")
     pdf.add_page()
 
     pdf.set_font("helvetica", "B", 18)
-    pdf.cell(0, 10, "Receipt report", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 10, "Stub receipt report", new_x="LMARGIN", new_y="NEXT")
     pdf.set_font("helvetica", size=10)
     pdf.set_text_color(90)
     pdf.cell(

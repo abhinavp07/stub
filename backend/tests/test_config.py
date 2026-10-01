@@ -53,3 +53,20 @@ def test_queue_mode_requires_s3(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("STORAGE_MODE", "local")
     with pytest.raises(ValidationError, match="requires STORAGE_MODE=s3"):
         Settings(_env_file=None)  # type: ignore[call-arg]
+
+
+def test_aws_profile_from_env_file_reaches_boto3(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: "pytest.TempPathFactory"
+) -> None:
+    import os
+
+    monkeypatch.delenv("AWS_PROFILE", raising=False)
+    env_file = tmp_path / ".env"  # type: ignore[operator]
+    env_file.write_text("AWS_PROFILE=stub\n")
+    try:
+        Settings(_env_file=env_file)  # type: ignore[call-arg]
+        assert os.environ["AWS_PROFILE"] == "stub"
+    finally:
+        # Set by the code under test, not monkeypatch, so remove it by hand: a leftover
+        # profile would break every boto3 client (and moto) in later tests.
+        os.environ.pop("AWS_PROFILE", None)

@@ -1,4 +1,4 @@
-# Receipt Tracker
+# Stub
 
 Upload photos or PDFs of receipts. The app extracts merchant, date, totals and line items with
 Amazon Textract (`AnalyzeExpense`), categorizes them, and shows spending insights. You can review
@@ -18,9 +18,27 @@ make setup   # creates .env, starts Postgres, installs deps, runs migrations
 make dev     # API on http://localhost:8000, web on http://localhost:3000
 ```
 
-Open http://localhost:3000, sign up, and upload any JPG, PNG or PDF. In mock mode the "extraction"
-returns one of three realistic sample receipts (grocery, restaurant, gas station) after a short
-delay, so you can try the whole flow offline. Kroger and Shell receipts are filed automatically
+Open http://localhost:3000, sign up, and upload receipts. In mock mode the "extraction" returns
+realistic sample data after a short delay, so the whole flow works offline.
+
+### Demo receipts
+
+[`demo-receipts/`](demo-receipts/) has five receipts to try. Drag them all onto the Upload page at
+once:
+
+| File | What it shows |
+|---|---|
+| `kroger-groceries.png` | Line items, quantities, auto-filed under Groceries |
+| `joes-diner.jpg` | A tip; no rule matches, so pick a category and the next one follows |
+| `shell-gas.png` | Fuel priced per gallon, auto-filed under Gas |
+| `starbucks-needs-review.jpg` | A low-confidence total: amber outline and a "Needs review" flag |
+| `cvs-pharmacy.pdf` | A PDF receipt, dated last month (for the month-over-month comparison) |
+
+In mock mode each demo file extracts as itself, with the date printed on it. **Mock mode never
+reads images**, so any other file comes back blank and flagged for review (an amber banner in the
+app says so). To read your own receipts, see below. The dates are in the current month so the dashboard has data;
+`make demo-receipts` regenerates them with fresh dates. With `TEXTRACT_MODE=aws`, Textract reads
+the same values off the images. Kroger and Shell receipts are filed automatically
 (Groceries, Gas); move a Joe's Diner receipt into a category and the next one follows. The
 dashboard shows this month vs last, spending by category, a 12-month trend and budget
 progress; Export CSV is on the dashboard and the receipts list.
@@ -58,16 +76,35 @@ make e2e       # Playwright: sign up → upload → edit → dashboard → expor
 make lint      # ruff, eslint, prettier, tsc
 make format    # auto-fix formatting
 make migrate   # alembic upgrade head
+make demo-receipts  # refresh demo-receipts/ with this month's dates
 
 # New migration after changing models:
 cd backend && uv run alembic revision --autogenerate -m "describe change"
 ```
 
+### Reading real receipts
+
+Real extraction uses Amazon Textract. Locally you only need AWS credentials, not a bucket:
+
+1. In the AWS console (IAM), create a user with an access key and attach a policy allowing
+   `textract:AnalyzeExpense`.
+2. `brew install awscli && aws configure --profile stub` (enter the key; region `us-east-1`).
+3. Create `.env` if you haven't (`cp .env.example .env`) and set:
+   ```
+   TEXTRACT_MODE=aws
+   AWS_PROFILE=stub
+   ```
+   Leave `STORAGE_MODE=local`; files are sent to Textract directly.
+4. Restart `make dev`. The demo-mode banner disappears, and uploads are read for real.
+
+AnalyzeExpense costs about $0.01 per page (check current Textract pricing). Photos work best flat,
+well lit and filling the frame. Sync AnalyzeExpense reads single-page PDFs only.
+
 ## Using real AWS (Textract + S3)
 
 Local development never needs AWS. To test real extraction:
 
-1. Create a private S3 bucket (e.g. `receipt-tracker-dev-uploads`) and keep **Block all public
+1. Create a private S3 bucket (e.g. `stub-dev-uploads`) and keep **Block all public
    access** on.
 2. Add a CORS rule to the bucket so the browser can upload directly:
    ```json
@@ -95,8 +132,8 @@ Local development never needs AWS. To test real extraction:
      ]
    }
    ```
-4. Configure credentials: `aws configure --profile receipt-tracker`, then add
-   `AWS_PROFILE=receipt-tracker` to `.env`.
+4. Configure credentials: `aws configure --profile stub`, then add
+   `AWS_PROFILE=stub` to `.env`.
 5. In `.env`, set `TEXTRACT_MODE=aws`, `STORAGE_MODE=s3`, `S3_BUCKET=<your bucket>` and
    `AWS_REGION=<bucket region>`. Restart the API.
 6. Set an AWS Budgets alert (e.g. $5/month) to guard against surprise costs. AnalyzeExpense is

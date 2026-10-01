@@ -1,0 +1,217 @@
+{
+  "DocumentMetadata": {
+    "Pages": 1
+  },
+  "ExpenseDocuments": [
+    {
+      "ExpenseIndex": 1,
+      "SummaryFields": [
+        {
+          "Type": {
+            "Text": "VENDOR_NAME",
+            "Confidence": 99.6
+          },
+          "ValueDetection": {
+            "Text": "CVS PHARMACY",
+            "Confidence": 99.1
+          },
+          "PageNumber": 1
+        },
+        {
+          "Type": {
+            "Text": "ADDRESS",
+            "Confidence": 96.5
+          },
+          "ValueDetection": {
+            "Text": "1 Main St, Boston MA",
+            "Confidence": 96.0
+          },
+          "PageNumber": 1
+        },
+        {
+          "Type": {
+            "Text": "INVOICE_RECEIPT_DATE",
+            "Confidence": 98.5
+          },
+          "LabelDetection": {
+            "Text": "Date",
+            "Confidence": 98.0
+          },
+          "ValueDetection": {
+            "Text": "09/20/2026",
+            "Confidence": 98.0,
+            "NormalizedValue": {
+              "Value": "2026-09-20T00:00:00",
+              "ValueType": "DATE"
+            }
+          },
+          "PageNumber": 1
+        },
+        {
+          "Type": {
+            "Text": "SUBTOTAL",
+            "Confidence": 99.0
+          },
+          "LabelDetection": {
+            "Text": "Subtotal",
+            "Confidence": 98.5
+          },
+          "ValueDetection": {
+            "Text": "$27.47",
+            "Confidence": 98.5
+          },
+          "PageNumber": 1
+        },
+        {
+          "Type": {
+            "Text": "TAX",
+            "Confidence": 98.7
+          },
+          "LabelDetection": {
+            "Text": "Tax",
+            "Confidence": 98.2
+          },
+          "ValueDetection": {
+            "Text": "$1.72",
+            "Confidence": 98.2
+          },
+          "PageNumber": 1
+        },
+        {
+          "Type": {
+            "Text": "TOTAL",
+            "Confidence": 99.5
+          },
+          "LabelDetection": {
+            "Text": "Total",
+            "Confidence": 99.0
+          },
+          "ValueDetection": {
+            "Text": "$29.19",
+            "Confidence": 99.0
+          },
+          "PageNumber": 1
+        }
+      ],
+      "LineItemGroups": [
+        {
+          "LineItemGroupIndex": 1,
+          "LineItems": [
+            {
+              "LineItemExpenseFields": [
+                {
+                  "Type": {
+                    "Text": "ITEM",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "ALLERGY RELIEF 24CT",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "PRICE",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "15.99",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "EXPENSE_ROW",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "ALLERGY RELIEF 24CT 15.99",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                }
+              ]
+            },
+            {
+              "LineItemExpenseFields": [
+                {
+                  "Type": {
+                    "Text": "ITEM",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "VITAMIN D3 1000IU",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "PRICE",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "8.49",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "EXPENSE_ROW",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "VITAMIN D3 1000IU 8.49",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                }
+              ]
+            },
+            {
+              "LineItemExpenseFields": [
+                {
+                  "Type": {
+                    "Text": "ITEM",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "BANDAGES 30CT",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "PRICE",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "2.99",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                },
+                {
+                  "Type": {
+                    "Text": "EXPENSE_ROW",
+                    "Confidence": 98.5
+                  },
+                  "ValueDetection": {
+                    "Text": "BANDAGES 30CT 2.99",
+                    "Confidence": 98.0
+                  },
+                  "PageNumber": 1
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "Blocks": []
+    }
+  ]
+}

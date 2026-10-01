@@ -1,7 +1,7 @@
 [project]
-name = "receipt-tracker-api"
+name = "stub-api"
 version = "0.1.0"
-description = "Receipt Scanner & Expense Tracker API"
+description = "Stub API: receipt scanning and expense tracking"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "fastapi>=0.115",

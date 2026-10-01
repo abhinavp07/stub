@@ -88,7 +88,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
             {isSignup ? "Create your account" : "Log in"}
           </h1>
           <p className="text-sm text-gray-600">
-            {isSignup ? "Start tracking receipts in seconds." : "Welcome back to Receipt Tracker."}
+            {isSignup ? "Start tracking receipts in seconds." : "Welcome back to Stub."}
           </p>
         </div>
 

@@ -19,6 +19,7 @@ os.environ.update(
     STORAGE_MODE="local",
     LOCAL_UPLOAD_DIR=_UPLOAD_DIR,
     MOCK_TEXTRACT_DELAY_SECONDS="0",
+    MOCK_UNKNOWN_FILES="sample",  # most tests upload placeholder bytes and want data back
     JWT_SECRET="test-secret-that-is-long-enough-for-hs256",
     RATE_LIMIT_ENABLED="false",  # rate-limit tests turn it back on explicitly
     EMAIL_MODE="log",

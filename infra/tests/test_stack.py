@@ -7,7 +7,7 @@ import aws_cdk as cdk
 import pytest
 from aws_cdk.assertions import Match, Template
 
-from infra.stack import MAX_RECEIVE_COUNT, Config, ReceiptTrackerStack
+from infra.stack import MAX_RECEIVE_COUNT, Config, StubStack
 
 ORIGIN = "https://receipts.example.com"
 
@@ -15,7 +15,7 @@ ORIGIN = "https://receipts.example.com"
 @pytest.fixture(scope="module")
 def template() -> Template:
     app = cdk.App()
-    stack = ReceiptTrackerStack(
+    stack = StubStack(
         app,
         "Test",
         config=Config(

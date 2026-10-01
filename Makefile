@@ -1,4 +1,4 @@
-.PHONY: setup db migrate api web worker dev lint format test e2e
+.PHONY: setup db migrate api web worker dev lint format test e2e demo-receipts
 
 setup: ## One-time: env file, Postgres, deps, migrations
 	@test -f .env || cp .env.example .env
@@ -43,3 +43,6 @@ test:
 
 e2e: db ## Playwright happy path; starts its own API (:8100), web (:3100) and receipts_e2e DB
 	cd frontend && pnpm exec playwright install chromium && pnpm e2e
+
+demo-receipts: ## Regenerate demo-receipts/ with dates in the current month
+	cd backend && uv run python -m scripts.make_demo_receipts

@@ -30,7 +30,7 @@ def _validation_message(exc: RequestValidationError) -> str:
 def create_app() -> FastAPI:
     settings = get_settings()
     configure_logging(settings.log_format, settings.log_level)
-    app = FastAPI(title="Receipt Tracker API", version="0.1.0")
+    app = FastAPI(title="Stub API", version="0.1.0")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,

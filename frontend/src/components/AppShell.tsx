@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
-import { authApi } from "@/lib/api";
+import { authApi, metaApi } from "@/lib/api";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard" },
@@ -16,6 +16,26 @@ const NAV = [
 
 export function useMe() {
   return useQuery({ queryKey: ["me"], queryFn: authApi.me, staleTime: 5 * 60_000 });
+}
+
+function DemoModeBanner() {
+  const { data } = useQuery({
+    queryKey: ["health"],
+    queryFn: metaApi.health,
+    staleTime: Infinity,
+  });
+  if (data?.textract_mode !== "mock") return null;
+  return (
+    <div role="note" className="border-b border-amber-200 bg-amber-50 text-sm text-amber-900">
+      <p className="mx-auto max-w-6xl px-4 py-2">
+        <strong className="font-semibold">Demo mode:</strong> receipts aren&apos;t actually read.
+        Files from <code className="rounded bg-amber-100 px-1">demo-receipts/</code> return sample
+        data; anything else comes back blank for you to fill in. Set{" "}
+        <code className="rounded bg-amber-100 px-1">TEXTRACT_MODE=aws</code> to read real receipts
+        (see the README).
+      </p>
+    </div>
+  );
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -42,7 +62,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <header className="border-b border-gray-200 bg-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
           <Link href="/dashboard" className="font-semibold tracking-tight">
-            Receipt Tracker
+            Stub
           </Link>
           <nav aria-label="Main" className="-mx-1 flex max-w-full gap-1 overflow-x-auto px-1">
             {NAV.map((item) => {
@@ -77,6 +97,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
+      <DemoModeBanner />
       <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
         {children}
       </main>

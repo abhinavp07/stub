@@ -1,0 +1,27 @@
+{
+  "12a1024ce1f42e3e24ac7c7c78a769bfb00621b5f099ab6894b5b22a320c272f": {
+    "date": "2026-10-01",
+    "file": "starbucks-needs-review.jpg",
+    "sample": "coffee"
+  },
+  "6e556d36b323a983e657dbb07087d48295fe069e028587dabc8629de48b8eb3c": {
+    "date": "2026-10-01",
+    "file": "joes-diner.jpg",
+    "sample": "restaurant"
+  },
+  "7293c5b968a9097027e5165e5ae298134ff5f978022a31273949deb54b350a3b": {
+    "date": "2026-09-20",
+    "file": "cvs-pharmacy.pdf",
+    "sample": "pharmacy"
+  },
+  "b904fc6ecdbb7602ee2dcd8aa998e05d180e67947ba58cbdea2cce117bc6dc7b": {
+    "date": "2026-10-01",
+    "file": "kroger-groceries.png",
+    "sample": "grocery"
+  },
+  "e7a35625853bd3307856fd19bb6e917c63b5a71b0c4f7a04588c2b7cbe6d2106": {
+    "date": "2026-10-01",
+    "file": "shell-gas.png",
+    "sample": "gas_station"
+  }
+}

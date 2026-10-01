@@ -1,4 +1,4 @@
-name: receipt-tracker
+name: stub
 
 services:
   postgres:

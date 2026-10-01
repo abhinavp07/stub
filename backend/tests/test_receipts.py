@@ -16,10 +16,12 @@ from tests.conftest import (
     PNG_BYTES,
     ClientFactory,
     upload_receipt,
+    use_sample,
 )
 
 
 async def test_upload_flow_extracts_receipt(client: AsyncClient) -> None:
+    use_sample("grocery")
     receipt = await upload_receipt(client)
     assert receipt["status"] == "ready"
     assert receipt["error_message"] is None

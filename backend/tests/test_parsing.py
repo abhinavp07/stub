@@ -196,14 +196,17 @@ def test_every_fixture_parses(name: str) -> None:
     parse_expense(load(name))
 
 
+MOCK_DIR = Path(__file__).parents[1] / "app/services/mock_responses"
+
+
 @pytest.mark.parametrize(
-    "mock", [p.stem for p in (Path(__file__).parents[1] / "app/services/mock_responses").glob("*")]
+    "mock", [p.stem for p in MOCK_DIR.glob("*.json") if p.stem != "demo_index"]
 )
-def test_mock_responses_are_clean_receipts(mock: str) -> None:
-    path = Path(__file__).parents[1] / "app/services/mock_responses" / f"{mock}.json"
-    r = parse_expense(json.loads(path.read_text()))
+def test_mock_responses_are_complete_receipts(mock: str) -> None:
+    r = parse_expense(json.loads((MOCK_DIR / f"{mock}.json").read_text()))
     assert r.merchant and r.purchase_date and r.total and r.line_items
-    assert not needs_review(r, THRESHOLD)
+    # Only the Starbucks sample is meant to need review (its total is low-confidence).
+    assert needs_review(r, THRESHOLD) is (mock == "coffee")
 
 
 # --- needs_review rules ---------------------------------------------------------------------

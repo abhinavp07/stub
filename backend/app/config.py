@@ -1,4 +1,5 @@
 import json
+import os
 from functools import lru_cache
 from typing import Annotated, Literal
 from urllib.parse import quote
@@ -14,7 +15,11 @@ class Settings(BaseSettings):
     jwt_secret: str = "change-me"
     jwt_expires_minutes: int = 10080
     aws_region: str = "us-east-1"
-    s3_bucket: str = "receipt-tracker-dev-uploads"
+    # Named profile from ~/.aws for local runs against real AWS. Values in .env don't reach
+    # boto3 on their own (they're read into Settings, not the process environment), so this
+    # one is exported for it.
+    aws_profile: str = ""
+    s3_bucket: str = "stub-dev-uploads"
     textract_mode: Literal["mock", "aws"] = "mock"
     storage_mode: Literal["local", "s3"] = "local"
     local_upload_dir: str = "./.uploads"
@@ -30,7 +35,7 @@ class Settings(BaseSettings):
     database_secret: str = ""
     # Budget alert emails: "log" writes them to the log (dev), "ses" sends via Amazon SES.
     email_mode: Literal["log", "ses"] = "log"
-    email_from: str = "Receipt Tracker <alerts@example.com>"
+    email_from: str = "Stub <alerts@example.com>"
     # Public URL of the web app, for links in emails.
     app_base_url: str = "http://localhost:3000"
     log_format: Literal["text", "json"] = "text"
@@ -43,6 +48,9 @@ class Settings(BaseSettings):
     cookie_secure: bool = False
     # Artificial delay for the mock extractor, so the "processing" state is visible locally.
     mock_textract_delay_seconds: float = 1.5
+    # What the mock extractor returns for files that aren't demo receipts: "empty" (nothing
+    # read; the user fills it in) or "sample" (made-up sample data; used by tests).
+    mock_unknown_files: Literal["empty", "sample"] = "empty"
 
     @property
     def max_upload_bytes(self) -> int:
@@ -50,6 +58,8 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _derived(self) -> "Settings":
+        if self.aws_profile:
+            os.environ.setdefault("AWS_PROFILE", self.aws_profile)
         if self.database_secret:
             secret = json.loads(self.database_secret)
             self.database_url = (

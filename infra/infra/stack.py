@@ -1,4 +1,4 @@
-"""Receipt Tracker on AWS.
+"""Stub on AWS.
 
     S3 (private uploads) --ObjectCreated--> SQS --> worker (ECS Fargate) --> Textract
                                              \\--> DLQ (after 3 failed receives, alarmed)
@@ -62,7 +62,7 @@ class Config:
     extra_env: dict[str, str] = field(default_factory=dict)
 
 
-class ReceiptTrackerStack(Stack):
+class StubStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, *, config: Config, **kwargs: object):
         super().__init__(scope, construct_id, **kwargs)  # type: ignore[arg-type]
         c = config
@@ -200,7 +200,7 @@ class ReceiptTrackerStack(Stack):
             service="ses", resource="identity", resource_name=c.alerts_from_email
         )
 
-        ops_topic = sns.Topic(self, "OpsAlerts", display_name="Receipt Tracker alerts")
+        ops_topic = sns.Topic(self, "OpsAlerts", display_name="Stub alerts")
         ops_topic.add_subscription(subs.EmailSubscription(c.ops_email))
         dlq_alarm = cloudwatch.Alarm(
             self,
@@ -258,7 +258,7 @@ class ReceiptTrackerStack(Stack):
             "S3_BUCKET": bucket.bucket_name,
             "SQS_QUEUE_URL": queue.queue_url,
             "EMAIL_MODE": "ses",
-            "EMAIL_FROM": f"Receipt Tracker <{c.alerts_from_email}>",
+            "EMAIL_FROM": f"Stub <{c.alerts_from_email}>",
             "APP_BASE_URL": c.app_base_url,
             "CORS_ORIGINS": ",".join(c.frontend_origins),
             "COOKIE_SECURE": "true",

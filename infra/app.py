@@ -5,7 +5,7 @@ import json
 
 import aws_cdk as cdk
 
-from infra.stack import Config, ReceiptTrackerStack
+from infra.stack import Config, StubStack
 
 
 def ctx(app: cdk.App, key: str) -> object:
@@ -31,16 +31,16 @@ config = Config(
     monthly_budget_usd=int(str(app.node.try_get_context("monthlyBudgetUsd") or 20)),
     deletion_protection=str(app.node.try_get_context("deletionProtection") or "true") == "true",
 )
-ReceiptTrackerStack(
+StubStack(
     app,
-    str(app.node.try_get_context("stackName") or "ReceiptTracker"),
+    str(app.node.try_get_context("stackName") or "Stub"),
     config=config,
     # Account/region come from the deploying credentials (CDK_DEFAULT_*).
     env=cdk.Environment(
         account=app.node.try_get_context("account") or None,
         region=app.node.try_get_context("region") or None,
     ),
-    description="Receipt Tracker: API, worker, database, uploads and queue",
+    description="Stub: API, worker, database, uploads and queue",
 )
-cdk.Tags.of(app).add("app", "receipt-tracker")
+cdk.Tags.of(app).add("app", "stub")
 app.synth()
